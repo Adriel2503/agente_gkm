@@ -11,22 +11,11 @@ class CitaStructuredResponse(BaseModel):
     """Schema para response_format del agente. Siempre devuelve reply; url opcional."""
 
     reply: str = Field(
-        description=(
-            "Mensaje de texto al cliente en formato WhatsApp "
-            "(*negrita*, _cursiva_, * viñetas). "
-            "Si create_booking devuelve un enlace Meet, incluirlo aquí como texto. "
-            "Nunca dejar vacío."
-        )
+        description="Respuesta al cliente que escribe. Nunca dejar vacío."
     )
     url: str | None = Field(
         default=None,
-        description=(
-            "Archivo adjunto opcional. Usos válidos: "
-            "(1) archivo de saludo en el primer mensaje (si no aplica un archivo de ayuda); "
-            "(2) archivo de ayuda de una pregunta frecuente, solo la primera vez que se responde esa FAQ en la conversación. "
-            "Si ya enviaste ese archivo antes en el historial, url debe ser null. "
-            "No usar para enlaces Meet (esos van en reply)."
-        ),
+        description="URL opcional de archivo adjunto. null si no aplica.",
     )
 
 
