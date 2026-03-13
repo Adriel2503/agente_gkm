@@ -84,3 +84,4 @@ class ChatRequest(BaseModel):
 class ChatResponse(BaseModel):
     reply: str
     url: str | None = None
+    session_id: int

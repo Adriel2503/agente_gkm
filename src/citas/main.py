@@ -119,19 +119,19 @@ async def chat(req: ChatRequest) -> ChatResponse:
 
         logger.info("[HTTP] Respuesta generada - Length: %s chars", len(reply))
         logger.debug("[HTTP] Reply: %s...", reply[:200])
-        return ChatResponse(reply=reply, url=url)
+        return ChatResponse(reply=reply, url=url, session_id=req.session_id)
 
     except asyncio.TimeoutError:
         _http_status = "timeout"
         error_msg = f"La solicitud tardó más de {app_config.CHAT_TIMEOUT}s. Por favor, intenta de nuevo."
         logger.error("[HTTP] Timeout en process_cita_message (CHAT_TIMEOUT=%s)", app_config.CHAT_TIMEOUT)
-        return ChatResponse(reply=error_msg, url=None)
+        return ChatResponse(reply=error_msg, url=None, session_id=req.session_id)
 
     except ValueError as e:
         _http_status = "error"
         error_msg = f"Error de configuración: {str(e)}"
         logger.error("[HTTP] %s", error_msg)
-        return ChatResponse(reply=error_msg, url=None)
+        return ChatResponse(reply=error_msg, url=None, session_id=req.session_id)
 
     except asyncio.CancelledError:
         _http_status = None  # No contar requests abortados externamente
@@ -141,7 +141,7 @@ async def chat(req: ChatRequest) -> ChatResponse:
         _http_status = "error"
         error_msg = f"Error procesando mensaje: {str(e)}"
         logger.error("[HTTP] %s", error_msg, exc_info=True)
-        return ChatResponse(reply=error_msg, url=None)
+        return ChatResponse(reply=error_msg, url=None, session_id=req.session_id)
 
     finally:
         if _http_status is not None:
