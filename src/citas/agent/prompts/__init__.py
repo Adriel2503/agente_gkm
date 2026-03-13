@@ -69,7 +69,11 @@ async def build_citas_system_prompt(
         variables["fecha_iso"],
     )
 
+    """
     # Cargar horario, productos/servicios, contexto de negocio y preguntas frecuentes en paralelo
+    # Services deshabilitados para plantilla demo (chatbot puro)
+    # Descomentar para reactivar los fetches de datos de negocio
+
     results = await asyncio.gather(
         fetch_horario_reuniones(id_empresa),
         fetch_nombres_productos_servicios(id_empresa),
@@ -99,6 +103,7 @@ async def build_citas_system_prompt(
     variables["lista_productos_servicios"] = format_nombres_para_prompt(nombres_productos, nombres_servicios)
     variables["contexto_negocio"] = contexto_negocio
     variables["preguntas_frecuentes"] = preguntas_frecuentes_str or ""
+    """
 
     return _citas_template.render(**variables)
 

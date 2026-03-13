@@ -334,10 +334,6 @@ async def search_productos_servicios(
 
 
 # Lista de todas las tools disponibles para el agente
-AGENT_TOOLS = [
-    check_availability,
-    create_booking,
-    search_productos_servicios,
-]
+AGENT_TOOLS = []
 
 __all__ = ["check_availability", "create_booking", "search_productos_servicios", "AGENT_TOOLS"]
