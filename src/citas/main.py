@@ -6,6 +6,7 @@ Versión mejorada con logging, métricas y observabilidad.
 """
 
 import asyncio
+import json
 import logging
 import time
 from contextlib import asynccontextmanager
@@ -77,6 +78,7 @@ async def chat(req: ChatRequest) -> AckResponse:
     El agente procesa en background y envía el resultado al CALLBACK_URL.
     """
     logger.info("[HTTP] Mensaje recibido - Session: %s, Empresa: %s, Length: %s chars", req.session_id, req.id_empresa, len(req.message))
+    logger.info("[HTTP] JSON entrada:\n%s", json.dumps(req.model_dump(), indent=2, ensure_ascii=False))
     logger.debug("[HTTP] Message: %s...", req.message[:100])
 
     asyncio.create_task(_process_and_callback(req))
@@ -127,9 +129,11 @@ async def _process_and_callback(req: ChatRequest) -> None:
         return
 
     payload = ChatResponse(reply=reply, url=url, session_id=req.session_id)
+    callback_data = payload.model_dump()
+    logger.info("[CALLBACK] JSON salida:\n%s", json.dumps(callback_data, indent=2, ensure_ascii=False))
     try:
         client = get_client()
-        response = await client.post(app_config.CALLBACK_URL, json=payload.model_dump())
+        response = await client.post(app_config.CALLBACK_URL, json=callback_data)
         response.raise_for_status()
         logger.info("[CALLBACK] Respuesta enviada - Session: %s, Status: %s", req.session_id, response.status_code)
     except Exception as e:
