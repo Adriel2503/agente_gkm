@@ -21,7 +21,8 @@ from .logger import setup_logging, get_logger
 from .metrics import initialize_agent_info, HTTP_REQUESTS, HTTP_DURATION
 from .infra import close_http_client
 from .config import get_health_issues
-from .schemas import ChatRequest, ChatResponse
+from .schemas import ChatRequest, ChatResponse, AckResponse
+from .infra.http_client import get_client
 
 # Configurar logging antes de cualquier otra cosa
 log_level = getattr(logging, app_config.LOG_LEVEL.upper(), logging.INFO)
@@ -69,40 +70,21 @@ app.mount("/metrics", make_asgi_app())
 # Endpoint principal
 # ---------------------------------------------------------------------------
 
-@app.post("/api/chat", response_model=ChatResponse)
-async def chat(req: ChatRequest) -> ChatResponse:
+@app.post("/api/chat", response_model=AckResponse)
+async def chat(req: ChatRequest) -> AckResponse:
     """
-    Agente especializado en citas / reuniones.
-
-    Recibe el mensaje del cliente y el contexto de configuración enviados
-    por el gateway, y devuelve la respuesta del agente.
-
-    El agente maneja la conversación completa de forma autónoma,
-    decidiendo cuándo usar cada tool según el contexto.
-    La memoria es automática gracias al checkpointer (InMemorySaver).
-
-    Body:
-        message: Mensaje del cliente que quiere agendar una cita
-        session_id: ID de sesión (int, unificado con orquestador)
-        id_empresa: ID de la empresa (int, requerido)
-        config: Configuración opcional del bot:
-            - usuario_id (int, opcional): ID del usuario/vendedor
-            - correo_usuario (str, opcional): Email del usuario/vendedor
-            - agendar_usuario (bool o int, opcional): 1=agendar por usuario (default: 1)
-            - agendar_sucursal (bool o int, opcional): 1=agendar por sucursal (default: 0)
-            - duracion_cita_minutos (int, requerido): Duración de la cita en minutos
-            - slots (int, requerido): Capacidad de slots simultáneos
-            - personalidad (str, opcional): Personalidad del agente
-
-    Returns:
-        JSON con campo reply: respuesta del agente
+    Recibe mensaje y responde 200 inmediatamente.
+    El agente procesa en background y envía el resultado al CALLBACK_URL.
     """
-    config = req.config
-
     logger.info("[HTTP] Mensaje recibido - Session: %s, Empresa: %s, Length: %s chars", req.session_id, req.id_empresa, len(req.message))
     logger.debug("[HTTP] Message: %s...", req.message[:100])
-    logger.debug("[HTTP] Config fields: %s", config.model_fields_set if config else "None")
 
+    asyncio.create_task(_process_and_callback(req))
+    return AckResponse()
+
+
+async def _process_and_callback(req: ChatRequest) -> None:
+    """Procesa el mensaje con el agente y envía la respuesta al CALLBACK_URL."""
     _start = time.perf_counter()
     _http_status = "success"
 
@@ -112,41 +94,46 @@ async def chat(req: ChatRequest) -> ChatResponse:
                 message=req.message,
                 session_id=req.session_id,
                 id_empresa=req.id_empresa,
-                config=config,
+                config=req.config,
             ),
             timeout=app_config.CHAT_TIMEOUT,
         )
 
-        logger.info("[HTTP] Respuesta generada - Length: %s chars", len(reply))
-        logger.debug("[HTTP] Reply: %s...", reply[:200])
-        return ChatResponse(reply=reply, url=url, session_id=req.session_id)
-
     except asyncio.TimeoutError:
         _http_status = "timeout"
-        error_msg = f"La solicitud tardó más de {app_config.CHAT_TIMEOUT}s. Por favor, intenta de nuevo."
+        reply = f"La solicitud tardó más de {app_config.CHAT_TIMEOUT}s. Por favor, intenta de nuevo."
+        url = None
         logger.error("[HTTP] Timeout en process_cita_message (CHAT_TIMEOUT=%s)", app_config.CHAT_TIMEOUT)
-        return ChatResponse(reply=error_msg, url=None, session_id=req.session_id)
 
     except ValueError as e:
         _http_status = "error"
-        error_msg = f"Error de configuración: {str(e)}"
-        logger.error("[HTTP] %s", error_msg)
-        return ChatResponse(reply=error_msg, url=None, session_id=req.session_id)
-
-    except asyncio.CancelledError:
-        _http_status = None  # No contar requests abortados externamente
-        raise
+        reply = f"Error de configuración: {str(e)}"
+        url = None
+        logger.error("[HTTP] %s", reply)
 
     except Exception as e:
         _http_status = "error"
-        error_msg = f"Error procesando mensaje: {str(e)}"
-        logger.error("[HTTP] %s", error_msg, exc_info=True)
-        return ChatResponse(reply=error_msg, url=None, session_id=req.session_id)
+        reply = f"Error procesando mensaje: {str(e)}"
+        url = None
+        logger.error("[HTTP] %s", reply, exc_info=True)
 
     finally:
-        if _http_status is not None:
-            HTTP_REQUESTS.labels(status=_http_status).inc()
-            HTTP_DURATION.observe(time.perf_counter() - _start)
+        HTTP_REQUESTS.labels(status=_http_status).inc()
+        HTTP_DURATION.observe(time.perf_counter() - _start)
+
+    # Enviar respuesta al callback
+    if not app_config.CALLBACK_URL:
+        logger.error("[CALLBACK] CALLBACK_URL no configurada - Session: %s, respuesta descartada", req.session_id)
+        return
+
+    payload = ChatResponse(reply=reply, url=url, session_id=req.session_id)
+    try:
+        client = get_client()
+        response = await client.post(app_config.CALLBACK_URL, json=payload.model_dump())
+        response.raise_for_status()
+        logger.info("[CALLBACK] Respuesta enviada - Session: %s, Status: %s", req.session_id, response.status_code)
+    except Exception as e:
+        logger.error("[CALLBACK] Error enviando respuesta - Session: %s | %s", req.session_id, e, exc_info=True)
 
 
 # ---------------------------------------------------------------------------

@@ -177,6 +177,12 @@ API_PREGUNTAS_FRECUENTES_URL: str = _get_str(
 )
 
 # ---------------------------------------------------------------------------
+# Callback (URL donde se envía la respuesta del agente en modo async)
+# ---------------------------------------------------------------------------
+
+CALLBACK_URL: str = _get_str("CALLBACK_URL", "")
+
+# ---------------------------------------------------------------------------
 # Zona horaria (fecha/hora en prompts y validación)
 # ---------------------------------------------------------------------------
 

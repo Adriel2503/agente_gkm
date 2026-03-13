@@ -31,6 +31,7 @@ from .config import (
     API_AGENDAR_REUNION_URL,
     API_INFORMACION_URL,
     API_PREGUNTAS_FRECUENTES_URL,
+    CALLBACK_URL,
     TIMEZONE,
 )
 from .circuit_breakers import (
@@ -73,6 +74,7 @@ __all__ = [
     "HTTP_MAX_KEEPALIVE",
     "REDIS_URL",
     "REDIS_CHECKPOINT_TTL_HOURS",
+    "CALLBACK_URL",
     "informacion_cb",
     "preguntas_cb",
     "calendario_cb",

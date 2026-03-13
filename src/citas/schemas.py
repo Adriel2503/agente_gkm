@@ -81,7 +81,13 @@ class ChatRequest(BaseModel):
     config: CitasConfig | None = None
 
 
+class AckResponse(BaseModel):
+    """Respuesta inmediata de /api/chat."""
+    status: str = "ok"
+
+
 class ChatResponse(BaseModel):
+    """Payload enviado al callback con la respuesta del agente."""
     reply: str
     url: str | None = None
     session_id: int
