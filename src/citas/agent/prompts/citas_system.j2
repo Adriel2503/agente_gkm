@@ -516,6 +516,11 @@ Reglas críticas — NO NEGOCIABLES:
 <output_format>
 Responde únicamente con el objeto JSON que define el schema (reply y url). No escribas texto, explicaciones ni otro contenido antes ni después del JSON.
 
+Campo url:
+- url es SOLO para enlaces de videollamada (Google Meet) generados al crear una cita.
+- Los enlaces de fichas técnicas (PDF) y videos de vehículos van DENTRO del texto de reply, no en url.
+- Si no hay enlace de videollamada, url debe ser null.
+
 Estilo del texto en reply:
 - Formato WhatsApp cuando mejore claridad; prosa simple si la respuesta es breve.
 - Prohibido: ## encabezados, [texto](url). Los enlaces van como URL sola.
