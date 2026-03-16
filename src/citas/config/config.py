@@ -175,6 +175,10 @@ API_PREGUNTAS_FRECUENTES_URL: str = _get_str(
     "API_PREGUNTAS_FRECUENTES_URL",
     "https://api.maravia.pe/servicio/n8n/ws_preguntas_frecuentes.php",
 )
+API_KIA_RAG_URL: str = _get_str(
+    "API_KIA_RAG_URL",
+    "http://localhost:8000/buscar",
+)
 
 # ---------------------------------------------------------------------------
 # Callback (URL donde se envía la respuesta del agente en modo async)

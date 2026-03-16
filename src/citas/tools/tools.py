@@ -12,6 +12,7 @@ from pydantic import ValidationError
 
 from ..services.scheduling import ScheduleValidator, ScheduleRecommender, confirm_booking
 from ..services.busqueda_productos import buscar_productos_servicios, format_productos_para_respuesta
+from ..services.busqueda_kia import buscar_modelos_kia, format_kia_resultados
 from ..logger import get_logger
 from ..metrics import track_tool_execution, record_tool_validation_error
 from .validation import BookingData, format_validation_error, validate_date_format
@@ -333,7 +334,48 @@ async def search_productos_servicios(
         return f"Error al buscar: {str(e)}. Intenta de nuevo."
 
 
-# Lista de todas las tools disponibles para el agente
-AGENT_TOOLS = []
+@tool
+async def search_kia_modelos(
+    query: str,
+    runtime: ToolRuntime = None
+) -> str:
+    """
+    Busca modelos de autos KIA por similitud semántica en el catálogo.
+    Úsala SIEMPRE que el cliente pregunte por modelos, precios, cuotas,
+    colores disponibles, fichas técnicas o cualquier dato de los vehículos KIA.
 
-__all__ = ["check_availability", "create_booking", "search_productos_servicios", "AGENT_TOOLS"]
+    Devuelve hasta 3 modelos con: nombre, versión, gama, año, precio,
+    cuota bancaria, colores, descripción, ficha técnica (PDF) y video.
+
+    Args:
+        query: Texto libre de búsqueda (ej: "auto familiar económico", "New Picanto", "SUV menos de 40 mil")
+
+    Returns:
+        Información de los modelos KIA más relevantes para la búsqueda
+    """
+    logger.info("[search_kia_modelos] Tool en uso: search_kia_modelos, query=%s", query)
+
+    try:
+        with track_tool_execution("search_kia_modelos"):
+            result = await buscar_modelos_kia(query=query, log_apis=True)
+
+        if not result["success"]:
+            logger.warning("[TOOL] search_kia_modelos - Error: %s", result.get("error"))
+            return "No pude buscar los modelos en este momento. Intenta nuevamente."
+
+        resultados = result.get("resultados", [])
+        if not resultados:
+            return f"No encontré modelos KIA que coincidan con '{query}'. Prueba con otros términos."
+
+        logger.debug("[TOOL] search_kia_modelos - %d resultado(s)", len(resultados))
+        return format_kia_resultados(resultados)
+
+    except Exception as e:
+        logger.error("[TOOL] search_kia_modelos - Error: %s", e, exc_info=True)
+        return "Error al buscar modelos KIA. Intenta nuevamente."
+
+
+# Lista de todas las tools disponibles para el agente
+AGENT_TOOLS = [search_kia_modelos]
+
+__all__ = ["check_availability", "create_booking", "search_productos_servicios", "search_kia_modelos", "AGENT_TOOLS"]

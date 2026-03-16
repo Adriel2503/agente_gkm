@@ -49,6 +49,9 @@ htmlcov/
 .tox/
 nox/
 
+# Supabase (local config / CLI)
+supabase/
+
 # Linting / type checking
 .ruff_cache/
 .mypy_cache/
