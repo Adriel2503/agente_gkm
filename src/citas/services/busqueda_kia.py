@@ -55,9 +55,14 @@ def format_kia_resultados(resultados: list[dict]) -> str:
 
     lineas = []
     for r in resultados:
+        precio = r.get('precio_usd')
+        cuota = r.get('cuota_bancaria')
+        precio_str = f"${precio:,}" if precio else "N/A"
+        cuota_str = f"${cuota}/mes" if cuota else "N/A"
+
         lineas.append(f"🚗 **{r.get('modelo', 'N/A')}** — {r.get('detalle_version', '')}")
         lineas.append(f"   Gama: {r.get('gama', 'N/A')} | Año: {r.get('año', 'N/A')}")
-        lineas.append(f"   Precio: ${r.get('precio_usd', 'N/A'):,} | Cuota desde: ${r.get('cuota_bancaria', 'N/A')}/mes")
+        lineas.append(f"   Precio: {precio_str} | Cuota desde: {cuota_str}")
         lineas.append(f"   Colores: {r.get('colores', 'N/A')}")
         if r.get("introduccion"):
             lineas.append(f"   {r['introduccion']}")
