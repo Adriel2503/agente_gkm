@@ -27,7 +27,7 @@ dependencies = [
 
     # --- Configuración y templates ---
     "python-dotenv==1.2.2",          # Carga de .env en config.py
-    "jinja2==3.1.6",                 # System prompt dinámico (citas_system.j2)
+    "jinja2==3.1.6",                 # System prompt dinámico (gqm_system.j2)
 
     # --- Observabilidad y caché ---
     "prometheus-client==0.24.1",     # Métricas en /metrics (Prometheus/Grafana)

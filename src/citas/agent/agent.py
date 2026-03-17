@@ -16,7 +16,7 @@ from .runtime import (
 from ..tools.tools import AGENT_TOOLS
 from ..logger import get_logger
 from ..metrics import track_chat_response, track_llm_call, record_chat_error, chat_requests_total, AGENT_CACHE, update_cache_stats
-from .prompts import build_citas_system_prompt
+from .prompts import build_gqm_system_prompt
 from .content import CitaStructuredResponse, _build_content
 from .context import _prepare_agent_context
 from ..schemas import CitasConfig
@@ -79,7 +79,7 @@ async def _get_agent(id_empresa: int, config: CitasConfig | None):
             logger.debug("[AGENT] Creando agente con LangChain 1.2+ API - id_empresa=%s", cache_key[0])
 
             # Construir system prompt usando template Jinja2 (async: carga horario y productos en paralelo)
-            system_prompt = await build_citas_system_prompt(id_empresa=id_empresa, config=config)
+            system_prompt = await build_gqm_system_prompt(id_empresa=id_empresa, config=config)
 
             # Crear agente con API moderna (response_format: reply + url opcional)
             agent = create_agent(

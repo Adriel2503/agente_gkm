@@ -165,7 +165,7 @@ Comentar solo los fetches que no necesitas:
 
 ## 3. System Prompt (template Jinja2)
 
-**Archivo:** `src/citas/agent/prompts/citas_system.j2`
+**Archivo:** `src/citas/agent/prompts/gqm_system.j2`
 
 El template es 100% independiente. Puedes reemplazar todo su contenido.
 
@@ -215,7 +215,7 @@ Responde de forma amable y profesional.
 
 1. **`tools/tools.py`** → Ajustar `AGENT_TOOLS` (vacío, parcial, o nuevas tools)
 2. **`prompts/__init__.py`** → Eliminar/comentar fetches no necesarios (líneas 72-101)
-3. **`prompts/citas_system.j2`** → Reemplazar con tu prompt personalizado
+3. **`prompts/gqm_system.j2`** → Reemplazar con tu prompt personalizado
 4. **`.env`** → Configurar `OPENAI_API_KEY`, `OPENAI_MODEL`, quitar `REDIS_URL` si no usas Redis
 
 Todo lo demás (`agent.py`, `runtime/`, `config/`, `infra/`) queda igual — no tocar.

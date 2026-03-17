@@ -29,7 +29,7 @@ _jinja_env = Environment(
     loader=FileSystemLoader(str(_TEMPLATES_DIR)),
     autoescape=select_autoescape(disabled_extensions=()),
 )
-_citas_template = _jinja_env.get_template("citas_system.j2")
+_citas_template = _jinja_env.get_template("gqm_system.j2")
 
 
 def _now_peru() -> datetime:
@@ -37,7 +37,7 @@ def _now_peru() -> datetime:
     return datetime.now(_ZONA_PERU)
 
 
-async def build_citas_system_prompt(
+async def build_gqm_system_prompt(
     id_empresa: int,
     config: CitasConfig | None,
 ) -> str:
@@ -108,4 +108,4 @@ async def build_citas_system_prompt(
     return _citas_template.render(**variables)
 
 
-__all__ = ["build_citas_system_prompt"]
+__all__ = ["build_gqm_system_prompt"]
