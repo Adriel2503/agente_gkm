@@ -11,78 +11,78 @@ from contextlib import contextmanager
 
 # Conversaciones
 chat_requests_total = Counter(
-    'citas_chat_requests_total',
+    'gqm_chat_requests_total',
     'Total de mensajes recibidos por el agente',
     ['empresa_id']
 )
 
 chat_errors_total = Counter(
-    'citas_chat_errors_total',
+    'gqm_chat_errors_total',
     'Total de errores en el procesamiento de mensajes',
     ['error_type']
 )
 
 # Citas
 booking_attempts_total = Counter(
-    'citas_booking_attempts_total',
+    'gqm_booking_attempts_total',
     'Total de intentos de cita'
 )
 
 booking_success_total = Counter(
-    'citas_booking_success_total',
+    'gqm_booking_success_total',
     'Total de citas exitosas'
 )
 
 booking_failed_total = Counter(
-    'citas_booking_failed_total',
+    'gqm_booking_failed_total',
     'Total de citas fallidas',
     ['reason']
 )
 
 # Tools
 tool_calls_total = Counter(
-    'citas_tool_calls_total',
+    'gqm_tool_calls_total',
     'Total de llamadas a tools',
     ['tool_name']
 )
 
 tool_errors_total = Counter(
-    'citas_tool_errors_total',
+    'gqm_tool_errors_total',
     'Total de errores en tools',
     ['tool_name', 'error_type']
 )
 
 # API calls
 api_calls_total = Counter(
-    'citas_api_calls_total',
+    'gqm_api_calls_total',
     'Total de llamadas a APIs externas',
     ['endpoint', 'status']
 )
 
 # HTTP layer (/api/chat)
 HTTP_REQUESTS = Counter(
-    'citas_http_requests_total',
+    'gqm_http_requests_total',
     'Total de requests al endpoint /api/chat por resultado',
     ['status'],  # success | timeout | error
 )
 
 # Cache del agente (por empresa)
 AGENT_CACHE = Counter(
-    'citas_agent_cache_total',
+    'gqm_agent_cache_total',
     'Hits y misses del cache de agente por empresa',
     ['result'],  # hit | miss
 )
 
 # Cache de búsqueda de productos
 SEARCH_CACHE = Counter(
-    'citas_search_cache_total',
+    'gqm_search_cache_total',
     'Resultados del cache de búsqueda de productos',
     ['result'],  # hit | miss | circuit_open
 )
 
 # Degradación de validación (B2 — riesgo de double booking)
 degradation_total = Counter(
-    'citas_availability_degradation_total',
+    'gqm_availability_degradation_total',
     'Veces que la validación degradó a available=True o valid=True por fallo',
     ['service', 'reason'],
     # service: availability_check | schedule_fetch
@@ -93,34 +93,34 @@ degradation_total = Counter(
 # ========== HISTOGRAMAS (LATENCIA) ==========
 
 HTTP_DURATION = Histogram(
-    'citas_http_duration_seconds',
+    'gqm_http_duration_seconds',
     'Latencia total del endpoint /api/chat (incluye LLM y tools)',
     buckets=[0.25, 0.5, 1, 2.5, 5, 10, 20, 30, 60, 90, 120],
 )
 
 chat_response_duration_seconds = Histogram(
-    'citas_chat_response_duration_seconds',
+    'gqm_chat_response_duration_seconds',
     'Tiempo de respuesta del chat en segundos',
     ['status'],
     buckets=(0.1, 0.5, 1.0, 2.0, 5.0, 10.0, 30.0, 60.0, 90.0)
 )
 
 tool_execution_duration_seconds = Histogram(
-    'citas_tool_execution_duration_seconds',
+    'gqm_tool_execution_duration_seconds',
     'Tiempo de ejecución de tools en segundos',
     ['tool_name'],
     buckets=(0.1, 0.5, 1.0, 2.0, 5.0, 10.0, 20.0, 30.0)
 )
 
 api_call_duration_seconds = Histogram(
-    'citas_api_call_duration_seconds',
+    'gqm_api_call_duration_seconds',
     'Tiempo de llamadas a API en segundos',
     ['endpoint'],
     buckets=(0.1, 0.25, 0.5, 1.0, 2.5, 5.0, 10.0)
 )
 
 llm_call_duration_seconds = Histogram(
-    'citas_llm_call_duration_seconds',
+    'gqm_llm_call_duration_seconds',
     'Tiempo de llamadas al LLM en segundos',
     ['status'],
     buckets=(0.5, 1.0, 2.0, 5.0, 10.0, 20.0, 30.0, 60.0, 90.0)
@@ -129,7 +129,7 @@ llm_call_duration_seconds = Histogram(
 # ========== GAUGES (ESTADO ACTUAL) ==========
 
 cache_entries = Gauge(
-    'citas_cache_entries',
+    'gqm_cache_entries',
     'Número de entradas en cache',
     ['cache_type']
 )
@@ -137,7 +137,7 @@ cache_entries = Gauge(
 # ========== INFO ==========
 
 agent_info = Info(
-    'citas_info',
+    'gqm_info',
     'Información del agente de citas'
 )
 
@@ -244,7 +244,7 @@ def initialize_agent_info(model: str, version: str = "1.0.0"):
     agent_info.info({
         'version': version,
         'model': model,
-        'agent_type': 'citas'
+        'agent_type': 'gqm'
     })
 
 
