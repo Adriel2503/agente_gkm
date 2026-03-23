@@ -91,3 +91,8 @@ class ChatResponse(BaseModel):
     reply: str
     url: str | None = None
     session_id: int
+
+
+# Alias para documentación OpenAPI (callbacks)
+CallbackRequest = ChatResponse
+CallbackRequest.__doc__ = "Payload que el agente envía al CALLBACK_URL con la respuesta procesada."

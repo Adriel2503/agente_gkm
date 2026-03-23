@@ -12,7 +12,7 @@ import time
 from contextlib import asynccontextmanager
 
 import uvicorn
-from fastapi import FastAPI
+from fastapi import APIRouter, FastAPI
 from fastapi.responses import JSONResponse
 from prometheus_client import make_asgi_app
 
@@ -22,7 +22,7 @@ from .logger import setup_logging, get_logger
 from .metrics import initialize_agent_info, HTTP_REQUESTS, HTTP_DURATION
 from .infra import close_http_client
 from .config import get_health_issues
-from .schemas import ChatRequest, ChatResponse, AckResponse
+from .schemas import ChatRequest, ChatResponse, AckResponse, CallbackRequest
 from .infra.http_client import get_client
 
 # Configurar logging antes de cualquier otra cosa
@@ -68,10 +68,29 @@ app.mount("/metrics", make_asgi_app())
 
 
 # ---------------------------------------------------------------------------
+# Callback OpenAPI (documentación del webhook saliente)
+# ---------------------------------------------------------------------------
+
+_callback_router = APIRouter()
+
+@_callback_router.post(
+    "{$callback_url}",
+    response_model=CallbackRequest,
+    summary="Webhook saliente con la respuesta del agente",
+)
+async def agent_callback(body: CallbackRequest):
+    """
+    El agente envía este payload al CALLBACK_URL configurado
+    una vez que termina de procesar el mensaje.
+    """
+    ...  # pragma: no cover
+
+
+# ---------------------------------------------------------------------------
 # Endpoint principal
 # ---------------------------------------------------------------------------
 
-@app.post("/api/chat", response_model=AckResponse)
+@app.post("/api/chat", response_model=AckResponse, callbacks=_callback_router.routes)
 async def chat(req: ChatRequest) -> AckResponse:
     """
     Recibe mensaje y responde 200 inmediatamente.
