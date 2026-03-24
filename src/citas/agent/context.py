@@ -6,7 +6,7 @@ from dataclasses import dataclass, fields as dc_fields
 from typing import Any
 
 from ..logger import get_logger
-from ..schemas import CitasConfig
+from ..schemas import GQMConfig
 
 logger = get_logger(__name__)
 
@@ -27,16 +27,16 @@ class AgentContext:
     phone: str = ""
 
 
-def _prepare_agent_context(id_empresa: int, config: CitasConfig | None, phone: str) -> AgentContext:
+def _prepare_agent_context(id_empresa: int, config: GQMConfig | None, phone: str) -> AgentContext:
     """
     Prepara el contexto runtime para inyectar a las tools del agente.
 
-    Los validators de CitasConfig ya normalizaron bool→int, str→int, strip, etc.
+    Los validators de GQMConfig ya normalizaron bool→int, str→int, strip, etc.
     Solo se incluyen campos con valor no-None; el resto queda con el default del dataclass.
 
     Args:
         id_empresa: ID de la empresa (tenant key).
-        config: CitasConfig opcional validado por Pydantic.
+        config: GQMConfig opcional validado por Pydantic.
         phone: Teléfono del cliente (str, identificador de sesión WhatsApp).
 
     Returns:

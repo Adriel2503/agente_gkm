@@ -19,7 +19,7 @@ from ..metrics import track_chat_response, track_llm_call, record_chat_error, ch
 from .prompts import build_gqm_system_prompt
 from .content import CitaStructuredResponse, _build_content
 from .context import _prepare_agent_context
-from ..schemas import CitasConfig
+from ..schemas import GQMConfig
 
 logger = get_logger(__name__)
 
@@ -33,7 +33,7 @@ _OPENAI_ERRORS: dict[type, tuple[str, str, str, str]] = {
 }
 
 
-async def _get_agent(id_empresa: int, config: CitasConfig | None):
+async def _get_agent(id_empresa: int, config: GQMConfig | None):
     """
     Devuelve el agente compilado para id_empresa.
 
@@ -48,7 +48,7 @@ async def _get_agent(id_empresa: int, config: CitasConfig | None):
 
     Args:
         id_empresa: ID de la empresa (tenant key).
-        config: CitasConfig opcional con configuración del agente (personalidad, nombre, etc.).
+        config: GQMConfig opcional con configuración del agente (personalidad, nombre, etc.).
 
     Returns:
         Agente configurado con tools y checkpointer
@@ -108,7 +108,7 @@ async def process_cita_message(
     message: str,
     phone: str,
     id_empresa: int,
-    config: CitasConfig | None,
+    config: GQMConfig | None,
 ) -> tuple[str, str | None]:
     """
     Procesa un mensaje del cliente sobre citas/reuniones usando LangChain 1.2+ Agent.

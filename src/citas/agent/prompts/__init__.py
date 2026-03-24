@@ -11,7 +11,7 @@ from jinja2 import Environment, FileSystemLoader, select_autoescape
 
 from ... import config as app_config
 from ...logger import get_logger
-from ...schemas import CitasConfig
+from ...schemas import GQMConfig
 from ...services.prompt_data import fetch_contexto_negocio, fetch_horario_reuniones, fetch_nombres_productos_servicios, format_nombres_para_prompt, fetch_preguntas_frecuentes
 
 logger = get_logger(__name__)
@@ -39,14 +39,14 @@ def _now_peru() -> datetime:
 
 async def build_gqm_system_prompt(
     id_empresa: int,
-    config: CitasConfig | None,
+    config: GQMConfig | None,
 ) -> str:
     """
     Construye el system prompt del agente de citas.
 
     Args:
         id_empresa: ID de la empresa (tenant key).
-        config: CitasConfig opcional validado por Pydantic.
+        config: GQMConfig opcional validado por Pydantic.
 
     Returns:
         System prompt renderizado.

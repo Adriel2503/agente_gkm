@@ -6,7 +6,7 @@ Define el contrato HTTP (request/response) y la configuración tipada.
 from pydantic import BaseModel, Field, field_validator
 
 
-class CitasConfig(BaseModel):
+class GQMConfig(BaseModel):
     """Configuración específica del agente de citas."""
 
     # --- Campos para tools (AgentContext) ---
@@ -78,7 +78,9 @@ class ChatRequest(BaseModel):
     phone: str = Field(..., min_length=1, max_length=30)
     id_empresa: int
     # --- agregar campos universales aquí ---
-    config: CitasConfig | None = None
+    config: GQMConfig | None = None
+
+    model_config = {"extra": "ignore"}
 
 
 class AckResponse(BaseModel):
