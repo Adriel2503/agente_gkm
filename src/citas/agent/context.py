@@ -24,10 +24,10 @@ class AgentContext:
     usuario_id: int | None = None  # None = no enviado por el orquestador (requerido para CREAR_EVENTO)
     correo_usuario: str | None = None  # None = no enviado por el orquestador (requerido para CREAR_EVENTO)
     agendar_sucursal: int = 0
-    session_id: int = 0
+    phone: str = ""
 
 
-def _prepare_agent_context(id_empresa: int, config: CitasConfig | None, session_id: int) -> AgentContext:
+def _prepare_agent_context(id_empresa: int, config: CitasConfig | None, phone: str) -> AgentContext:
     """
     Prepara el contexto runtime para inyectar a las tools del agente.
 
@@ -37,14 +37,14 @@ def _prepare_agent_context(id_empresa: int, config: CitasConfig | None, session_
     Args:
         id_empresa: ID de la empresa (tenant key).
         config: CitasConfig opcional validado por Pydantic.
-        session_id: ID de sesión (int, unificado con orquestador).
+        phone: Teléfono del cliente (str, identificador de sesión WhatsApp).
 
     Returns:
         AgentContext configurado.
     """
     params: dict[str, Any] = {
         "id_empresa": id_empresa,
-        "session_id": session_id,
+        "phone": phone,
     }
 
     if config:

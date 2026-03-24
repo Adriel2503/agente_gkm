@@ -75,7 +75,7 @@ class ChatRequest(BaseModel):
     """Request base para agentes. Extender según necesidad."""
 
     message: str = Field(..., min_length=1, max_length=4096)
-    session_id: int
+    phone: str = Field(..., min_length=1, max_length=30)
     id_empresa: int
     # --- agregar campos universales aquí ---
     config: CitasConfig | None = None
@@ -90,7 +90,7 @@ class ChatResponse(BaseModel):
     """Payload enviado al callback con la respuesta del agente."""
     reply: str
     url: str | None = None
-    session_id: int
+    phone: str
 
 
 # Alias para documentación OpenAPI (callbacks)

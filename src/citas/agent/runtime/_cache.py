@@ -4,7 +4,7 @@ Caches y locks para el agente de citas.
 Contiene:
   - TTLCache de agentes compilados (_agent_cache)
   - Locks por cache_key para evitar thundering herd (_agent_cache_locks)
-  - Locks por session_id para serializar requests concurrentes (_session_locks)
+  - Locks por phone para serializar requests concurrentes (_session_locks)
   - Funciones de limpieza periódica de locks huérfanos
 
 No importa de infra/ para evitar dependencias circulares.
@@ -33,11 +33,11 @@ _agent_cache: TTLCache = TTLCache(
 _agent_cache_locks: dict[tuple, asyncio.Lock] = {}
 _LOCKS_CLEANUP_THRESHOLD = int(app_config.AGENT_CACHE_MAXSIZE * 1.5)  # 1.5x cache maxsize
 
-# Un lock por session_id para serializar requests concurrentes del mismo usuario.
+# Un lock por phone para serializar requests concurrentes del mismo usuario.
 # Evita que dos mensajes del mismo usuario ejecuten agent.ainvoke sobre el mismo
 # thread_id del checkpointer en paralelo.
 # Crece con cada sesión nueva; se limpia cuando supera _SESSION_LOCKS_CLEANUP_THRESHOLD.
-_session_locks: dict[int, asyncio.Lock] = {}
+_session_locks: dict[str, asyncio.Lock] = {}
 _SESSION_LOCKS_CLEANUP_THRESHOLD = app_config.AGENT_CACHE_MAXSIZE  # escala con el cache
 
 
@@ -87,13 +87,13 @@ def release_agent_lock(cache_key: tuple) -> None:
 # Operaciones de session locks
 # ---------------------------------------------------------------------------
 
-def acquire_session_lock(session_id: int) -> asyncio.Lock:
+def acquire_session_lock(phone: str) -> asyncio.Lock:
     """
-    Retorna el lock para un session_id, creándolo si no existe.
+    Retorna el lock para un phone, creándolo si no existe.
     Ejecuta limpieza de session locks huérfanos si se supera el threshold.
     """
-    _cleanup_stale_session_locks(session_id)
-    return _session_locks.setdefault(session_id, asyncio.Lock())
+    _cleanup_stale_session_locks(phone)
+    return _session_locks.setdefault(phone, asyncio.Lock())
 
 
 # ---------------------------------------------------------------------------
@@ -124,7 +124,7 @@ def _cleanup_stale_agent_locks(current_cache_key: tuple) -> None:
         logger.debug("[CACHE] Limpieza de locks huérfanos: %s eliminados", removed)
 
 
-def _cleanup_stale_session_locks(current_session_id: int) -> None:
+def _cleanup_stale_session_locks(current_phone: str) -> None:
     """
     Elimina locks de _session_locks que no están en uso.
     Solo se ejecuta si el dict supera _SESSION_LOCKS_CLEANUP_THRESHOLD.
@@ -137,7 +137,7 @@ def _cleanup_stale_session_locks(current_session_id: int) -> None:
         return
     removed = 0
     for sid in list(_session_locks.keys()):
-        if sid == current_session_id:
+        if sid == current_phone:
             continue
         lock = _session_locks.get(sid)
         if lock is not None and not lock.locked():

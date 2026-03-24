@@ -22,7 +22,7 @@ logger = get_logger(__name__)
 
 async def confirm_booking(
     usuario_id: int,
-    session_id: int,
+    phone: str,
     nombre_completo: str,
     correo_cliente: str,
     fecha: str,
@@ -37,7 +37,7 @@ async def confirm_booking(
 
     Args:
         usuario_id: ID del usuario (vendedor) que registra la cita
-        session_id: ID de sesión (int, unificado con orquestador). Se envía como id_prospecto al PHP.
+        phone: Teléfono del cliente (str). Se envía como id_prospecto al PHP.
         nombre_completo: Nombre completo del cliente
         correo_cliente: Email del cliente (correo_cliente en API)
         fecha: Fecha en formato YYYY-MM-DD
@@ -68,7 +68,7 @@ async def confirm_booking(
         payload = {
             "codOpe": "CREAR_EVENTO",
             "usuario_id": usuario_id,
-            "id_prospecto": session_id,
+            "id_prospecto": phone,
             "titulo": titulo,
             "fecha_inicio": fecha_inicio,
             "fecha_fin": fecha_fin,

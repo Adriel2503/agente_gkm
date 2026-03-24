@@ -96,7 +96,7 @@ async def chat(req: ChatRequest) -> AckResponse:
     Recibe mensaje y responde 200 inmediatamente.
     El agente procesa en background y envía el resultado al CALLBACK_URL.
     """
-    logger.info("[HTTP] Mensaje recibido - Session: %s, Empresa: %s, Length: %s chars", req.session_id, req.id_empresa, len(req.message))
+    logger.info("[HTTP] Mensaje recibido - Session: %s, Empresa: %s, Length: %s chars", req.phone, req.id_empresa, len(req.message))
     logger.info("[HTTP] JSON entrada:\n%s", json.dumps(req.model_dump(), indent=2, ensure_ascii=False))
     logger.debug("[HTTP] Message: %s...", req.message[:100])
 
@@ -113,7 +113,7 @@ async def _process_and_callback(req: ChatRequest) -> None:
         reply, url = await asyncio.wait_for(
             process_cita_message(
                 message=req.message,
-                session_id=req.session_id,
+                phone=req.phone,
                 id_empresa=req.id_empresa,
                 config=req.config,
             ),
@@ -144,19 +144,19 @@ async def _process_and_callback(req: ChatRequest) -> None:
 
     # Enviar respuesta al callback
     if not app_config.CALLBACK_URL:
-        logger.error("[CALLBACK] CALLBACK_URL no configurada - Session: %s, respuesta descartada", req.session_id)
+        logger.error("[CALLBACK] CALLBACK_URL no configurada - Session: %s, respuesta descartada", req.phone)
         return
 
-    payload = ChatResponse(reply=reply, url=url, session_id=req.session_id)
+    payload = ChatResponse(reply=reply, url=url, phone=req.phone)
     callback_data = payload.model_dump()
     logger.info("[CALLBACK] JSON salida:\n%s", json.dumps(callback_data, indent=2, ensure_ascii=False))
     try:
         client = get_client()
         response = await client.post(app_config.CALLBACK_URL, json=callback_data)
         response.raise_for_status()
-        logger.info("[CALLBACK] Respuesta enviada - Session: %s, Status: %s", req.session_id, response.status_code)
+        logger.info("[CALLBACK] Respuesta enviada - Session: %s, Status: %s", req.phone, response.status_code)
     except Exception as e:
-        logger.error("[CALLBACK] Error enviando respuesta - Session: %s | %s", req.session_id, e, exc_info=True)
+        logger.error("[CALLBACK] Error enviando respuesta - Session: %s | %s", req.phone, e, exc_info=True)
 
 
 # ---------------------------------------------------------------------------

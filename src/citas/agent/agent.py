@@ -106,7 +106,7 @@ async def _get_agent(id_empresa: int, config: CitasConfig | None):
 
 async def process_cita_message(
     message: str,
-    session_id: int,
+    phone: str,
     id_empresa: int,
     config: CitasConfig | None,
 ) -> tuple[str, str | None]:
@@ -121,7 +121,7 @@ async def process_cita_message(
 
     Args:
         message: Mensaje del cliente
-        session_id: ID de sesión (int, unificado con orquestador)
+        phone: Teléfono del cliente (str, identificador de sesión WhatsApp)
         id_empresa: ID de la empresa (tenant key)
         config: Config opcional del bot (personalidad, slots, etc.)
 
@@ -135,17 +135,17 @@ async def process_cita_message(
     # Comandos del sistema (interceptados antes del lock y del agente)
     _cmd = message.strip().lower()
     if _cmd == "/clear":
-        if session_id is not None and session_id >= 0:
-            await get_checkpointer().adelete_thread(str(session_id))
-        logger.info("[CMD] /clear - Session: %s | Historial borrado", session_id)
+        if phone:
+            await get_checkpointer().adelete_thread(phone)
+        logger.info("[CMD] /clear - Session: %s | Historial borrado", phone)
         return ("Historial limpiado. ¿En qué puedo ayudarte?", None)
 
     if _cmd == "/restart":
-        logger.warning("[CMD] /restart - Session: %s | Comando reservado, sin acción", session_id)
+        logger.warning("[CMD] /restart - Session: %s | Comando reservado, sin acción", phone)
         return ("Este comando está reservado para administradores.", None)
 
-    if session_id is None or session_id < 0:
-        raise ValueError("session_id es requerido (entero no negativo)")
+    if not phone:
+        raise ValueError("phone es requerido")
 
     # Registrar request con label de baja cardinalidad (por empresa, no por sesión)
     _empresa_id = str(id_empresa)
@@ -153,7 +153,7 @@ async def process_cita_message(
 
     # Serializar requests concurrentes del mismo usuario para evitar condiciones
     # de carrera sobre el mismo thread_id del checkpointer (InMemorySaver).
-    lock = acquire_session_lock(session_id)
+    lock = acquire_session_lock(phone)
     async with lock:
         try:
             agent = await _get_agent(id_empresa, config)
@@ -162,16 +162,16 @@ async def process_cita_message(
             record_chat_error("agent_creation_error")
             return ("Disculpa, tuve un problema de configuración. ¿Podrías intentar nuevamente?", None)
 
-        agent_context = _prepare_agent_context(id_empresa, config, session_id)
+        agent_context = _prepare_agent_context(id_empresa, config, phone)
 
         # LangGraph checkpointer usa thread_id como str
         run_config = {
             "configurable": {
-                "thread_id": str(session_id)
+                "thread_id": phone
             }
         }
         try:
-            logger.debug("[AGENT] Invocando agent - Session: %s, Message: %s...", session_id, message[:100])
+            logger.debug("[AGENT] Invocando agent - Session: %s, Message: %s...", phone, message[:100])
 
             with track_chat_response():
                 with track_llm_call():
@@ -188,22 +188,22 @@ async def process_cita_message(
             structured = result.get("structured_response")
             if isinstance(structured, CitaStructuredResponse):
                 if structured.reply is None:
-                    logger.warning("[AGENT] structured.reply es None - Session: %s", session_id)
+                    logger.warning("[AGENT] structured.reply es None - Session: %s", phone)
                     reply = "No recibí respuesta del asistente, por favor intenta nuevamente."
                 elif structured.reply == "":
-                    logger.warning("[AGENT] structured.reply es string vacío - Session: %s", session_id)
+                    logger.warning("[AGENT] structured.reply es string vacío - Session: %s", phone)
                     reply = "El asistente envió una respuesta vacía, por favor intenta nuevamente."
                 else:
                     reply = structured.reply
                 url = structured.url if (structured.url and structured.url.strip()) else None
             else:
-                logger.warning("[AGENT] Respuesta fuera de formato estructurado - Session: %s", session_id)
+                logger.warning("[AGENT] Respuesta fuera de formato estructurado - Session: %s", phone)
                 messages = result.get("messages", [])
                 if messages:
                     last_message = messages[-1]
                     reply = last_message.content if hasattr(last_message, "content") else str(last_message)
                     if not reply:
-                        logger.warning("[AGENT] last_message.content vacío - Session: %s", session_id)
+                        logger.warning("[AGENT] last_message.content vacío - Session: %s", phone)
                         reply = "El asistente respondió en un formato inesperado, por favor intenta nuevamente."
                 else:
                     reply = "El asistente respondió en un formato inesperado, por favor intenta nuevamente."
@@ -213,11 +213,11 @@ async def process_cita_message(
 
         except tuple(_OPENAI_ERRORS.keys()) as e:
             log_level, error_key, log_tag, user_msg = _OPENAI_ERRORS[type(e)]
-            getattr(logger, log_level)("[AGENT][%s] Session: %s | %s", log_tag, session_id, e)
+            getattr(logger, log_level)("[AGENT][%s] Session: %s | %s", log_tag, phone, e)
             record_chat_error(error_key)
             return (user_msg, None)
         except Exception as e:
-            logger.error("[AGENT] Error inesperado (%s) - Session: %s | %s", type(e).__name__, session_id, e, exc_info=True)
+            logger.error("[AGENT] Error inesperado (%s) - Session: %s | %s", type(e).__name__, phone, e, exc_info=True)
             record_chat_error("agent_execution_error")
             return ("Disculpa, tuve un problema al procesar tu mensaje. ¿Podrías intentar nuevamente?", None)
 
