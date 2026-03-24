@@ -96,9 +96,9 @@ async def chat(req: ChatRequest) -> AckResponse:
     Recibe mensaje y responde 200 inmediatamente.
     El agente procesa en background y envía el resultado al CALLBACK_URL.
     """
-    logger.info("[HTTP] Mensaje recibido - Session: %s, Empresa: %s, Length: %s chars", req.phone, req.id_empresa, len(req.message))
+    logger.info("[HTTP] Mensaje recibido - Session: %s, Empresa: %s, Length: %s chars", req.phone, req.id_empresa, len(req.question))
     logger.info("[HTTP] JSON entrada:\n%s", json.dumps(req.model_dump(), indent=2, ensure_ascii=False))
-    logger.debug("[HTTP] Message: %s...", req.message[:100])
+    logger.debug("[HTTP] Message: %s...", req.question[:100])
 
     asyncio.create_task(_process_and_callback(req))
     return AckResponse()
@@ -112,7 +112,7 @@ async def _process_and_callback(req: ChatRequest) -> None:
     try:
         reply, url = await asyncio.wait_for(
             process_cita_message(
-                message=req.message,
+                message=req.question,
                 phone=req.phone,
                 id_empresa=req.id_empresa,
                 config=req.config,
@@ -147,7 +147,7 @@ async def _process_and_callback(req: ChatRequest) -> None:
         logger.error("[CALLBACK] CALLBACK_URL no configurada - Session: %s, respuesta descartada", req.phone)
         return
 
-    payload = ChatResponse(reply=reply, url=url, phone=req.phone)
+    payload = ChatResponse(reply=reply, url=url, phone=req.phone, phone_number_id=req.phone_number_id)
     callback_data = payload.model_dump()
     logger.info("[CALLBACK] JSON salida:\n%s", json.dumps(callback_data, indent=2, ensure_ascii=False))
     try:

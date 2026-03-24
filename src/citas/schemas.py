@@ -74,9 +74,10 @@ class GQMConfig(BaseModel):
 class ChatRequest(BaseModel):
     """Request base para agentes. Extender según necesidad."""
 
-    message: str = Field(..., min_length=1, max_length=4096)
+    question: str = Field(..., min_length=1, max_length=4096)
     phone: str = Field(..., min_length=1, max_length=30)
     id_empresa: int
+    phone_number_id: str
     # --- agregar campos universales aquí ---
     config: GQMConfig | None = None
 
@@ -93,6 +94,7 @@ class ChatResponse(BaseModel):
     reply: str
     url: str | None = None
     phone: str
+    phone_number_id: str
 
 
 # Alias para documentación OpenAPI (callbacks)
