@@ -91,7 +91,7 @@ class AckResponse(BaseModel):
 
 class ChatResponse(BaseModel):
     """Payload enviado al callback con la respuesta del agente."""
-    question: str
+    message: str
     url: str | None = None
     phone: str
     phone_number_id: str

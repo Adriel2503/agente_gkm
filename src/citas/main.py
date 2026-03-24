@@ -147,7 +147,7 @@ async def _process_and_callback(req: ChatRequest) -> None:
         logger.error("[CALLBACK] CALLBACK_URL no configurada - Session: %s, respuesta descartada", req.phone)
         return
 
-    payload = ChatResponse(question=reply, url=url, phone=req.phone, phone_number_id=req.phone_number_id)
+    payload = ChatResponse(message=reply, url=url, phone=req.phone, phone_number_id=req.phone_number_id)
     callback_data = payload.model_dump()
     logger.info("[CALLBACK] JSON salida:\n%s", json.dumps(callback_data, indent=2, ensure_ascii=False))
     try:
