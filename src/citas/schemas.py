@@ -76,7 +76,8 @@ class ChatRequest(BaseModel):
 
     question: str = Field(..., min_length=1, max_length=4096)
     phone: str = Field(..., min_length=1, max_length=30)
-    id_empresa: int = 11  # opcional: solo 1 empresa usa el agente; varios services internos lo requieren
+    id_empresa: int
+    id_chat: int
     phone_number_id: str
     # --- agregar campos universales aquí ---
     config: GQMConfig | None = None
@@ -94,6 +95,8 @@ class ChatResponse(BaseModel):
     message: str
     url: str | None = None
     phone: str
+    id_empresa: int
+    id_chat: int
     phone_number_id: str
 
 
