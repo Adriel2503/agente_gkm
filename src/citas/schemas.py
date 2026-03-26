@@ -7,35 +7,40 @@ from pydantic import BaseModel, Field, field_validator
 
 
 class GQMConfig(BaseModel):
-    """Configuración específica del agente."""
+    """
+    Configuración específica del agente.
+    El orquestador envía estos campos en el JSON de entrada (dentro de "config").
+    Cada campo se pasa como variable a gqm_system.j2 via build_gqm_system_prompt().
+    """
 
     # --- Campos para tools (AgentContext) — agregar aquí ---
+    # Se mapean automáticamente al AgentContext (context.py) si el nombre coincide.
+    # Ejemplo:
+    #     duracion_cita_minutos: int | None = None
+    #     slots: int | None = None
 
-    # --- Campos para prompts (Jinja2 template) ---
-    personalidad: str = "amable, profesional y eficiente"
-    nombre_bot: str | None = None
-    frase_saludo: str | None = None
-    frase_des: str | None = None
-    frase_no_sabe: str | None = None
-    archivo_saludo: str | None = None
-    # --- agregar parámetros específicos del agente aquí ---
+    # --- Campos para prompts (Jinja2 template) — agregar aquí ---
+    # Se pasan como variables al template. Usar {{ nombre_campo }} en gqm_system.j2.
+    # Ejemplo:
+    #     personalidad: str = "amable, profesional y eficiente"
+    #     nombre_bot: str | None = None
 
-    @field_validator("personalidad", mode="before")
-    @classmethod
-    def default_personalidad(cls, v: object) -> str:
-        if not v or (isinstance(v, str) and not v.strip()):
-            return "amable, profesional y eficiente"
-        return v
-
-    @field_validator(
-        "nombre_bot", "frase_saludo", "frase_des", "frase_no_sabe", "archivo_saludo",
-        mode="before",
-    )
-    @classmethod
-    def empty_str_to_none(cls, v: object) -> object:
-        if isinstance(v, str) and not v.strip():
-            return None
-        return v
+    # --- Validators (limpiar/normalizar datos del orquestador) ---
+    # Ejemplo: campo con default si viene vacío:
+    #     @field_validator("personalidad", mode="before")
+    #     @classmethod
+    #     def default_personalidad(cls, v: object) -> str:
+    #         if not v or (isinstance(v, str) and not v.strip()):
+    #             return "amable, profesional y eficiente"
+    #         return v
+    #
+    # Ejemplo: convertir string vacío a None:
+    #     @field_validator("nombre_bot", "frase_saludo", mode="before")
+    #     @classmethod
+    #     def empty_str_to_none(cls, v: object) -> object:
+    #         if isinstance(v, str) and not v.strip():
+    #             return None
+    #         return v
 
     model_config = {"extra": "ignore"}
 

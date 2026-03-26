@@ -48,7 +48,7 @@ async def _get_agent(id_empresa: int, config: GQMConfig | None):
 
     Args:
         id_empresa: ID de la empresa (tenant key).
-        config: GQMConfig opcional con configuración del agente (personalidad, nombre, etc.).
+        config: GQMConfig opcional con configuración del agente.
 
     Returns:
         Agente configurado con tools y checkpointer
@@ -122,7 +122,7 @@ async def process_cita_message(
         message: Mensaje del cliente
         phone: Teléfono del cliente (str, identificador de sesión WhatsApp)
         id_empresa: ID de la empresa (tenant key)
-        config: Config opcional del bot (personalidad, slots, etc.)
+        config: Config opcional del bot.
 
     Returns:
         Tupla (reply, url). url es None cuando no hay medio que adjuntar.

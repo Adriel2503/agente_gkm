@@ -52,7 +52,6 @@ async def build_gqm_system_prompt(
     """
     variables = config.model_dump(exclude_none=True) if config else {}
     variables["id_empresa"] = id_empresa
-    variables["archivo_saludo"] = (config.archivo_saludo if config else None or "").strip()
 
     # Fecha y hora actual en Perú (para que el agente sepa "hoy" y "mañana")
     now = _now_peru()
