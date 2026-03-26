@@ -7,15 +7,9 @@ from pydantic import BaseModel, Field, field_validator
 
 
 class GQMConfig(BaseModel):
-    """Configuración específica del agente de citas."""
+    """Configuración específica del agente."""
 
-    # --- Campos para tools (AgentContext) ---
-    duracion_cita_minutos: int | None = None
-    slots: int | None = None
-    agendar_usuario: int = 1
-    usuario_id: int | None = None
-    correo_usuario: str | None = None
-    agendar_sucursal: int = 0
+    # --- Campos para tools (AgentContext) — agregar aquí ---
 
     # --- Campos para prompts (Jinja2 template) ---
     personalidad: str = "amable, profesional y eficiente"
@@ -24,38 +18,13 @@ class GQMConfig(BaseModel):
     frase_des: str | None = None
     frase_no_sabe: str | None = None
     archivo_saludo: str | None = None
-    id_chatbot: int | None = None
     # --- agregar parámetros específicos del agente aquí ---
-
-    @field_validator("agendar_usuario", "agendar_sucursal", mode="before")
-    @classmethod
-    def bool_to_int(cls, v: object) -> object:
-        if isinstance(v, bool):
-            return 1 if v else 0
-        return v
-
-    @field_validator("usuario_id", mode="before")
-    @classmethod
-    def coerce_usuario_id(cls, v: object) -> int | None:
-        if v is None:
-            return None
-        try:
-            return int(v)
-        except (ValueError, TypeError):
-            return None
 
     @field_validator("personalidad", mode="before")
     @classmethod
     def default_personalidad(cls, v: object) -> str:
         if not v or (isinstance(v, str) and not v.strip()):
             return "amable, profesional y eficiente"
-        return v
-
-    @field_validator("correo_usuario", mode="before")
-    @classmethod
-    def strip_correo(cls, v: object) -> str | None:
-        if isinstance(v, str):
-            return v.strip() or None
         return v
 
     @field_validator(

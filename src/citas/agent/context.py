@@ -18,12 +18,6 @@ class AgentContext:
     Este contexto se inyecta en las tools que lo necesiten.
     """
     id_empresa: int
-    duracion_cita_minutos: int | None = None  # None = no enviado por el orquestador
-    slots: int | None = None  # None = no enviado por el orquestador
-    agendar_usuario: int = 1  # bandera agendar_usuario (1/0) para ScheduleValidator
-    usuario_id: int | None = None  # None = no enviado por el orquestador (requerido para CREAR_EVENTO)
-    correo_usuario: str | None = None  # None = no enviado por el orquestador (requerido para CREAR_EVENTO)
-    agendar_sucursal: int = 0
     phone: str = ""
 
 
