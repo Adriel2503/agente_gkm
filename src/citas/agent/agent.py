@@ -114,8 +114,7 @@ async def process_cita_message(
     Procesa un mensaje del cliente sobre citas/reuniones usando LangChain 1.2+ Agent.
 
     El agente tiene acceso a tools internas:
-    - check_availability: Consulta horarios disponibles
-    - create_booking: Crea cita/evento con validación real
+    - search_kia_modelos: Busca modelos KIA por similitud semántica
 
     La memoria es automática gracias al checkpointer (InMemorySaver).
 

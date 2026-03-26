@@ -202,10 +202,8 @@ def main():
     logger.info("Endpoint: POST /api/chat")
     logger.info("Health:   GET  /health")
     logger.info("Metrics:  GET  /metrics")
-    logger.info("Tools internas del agente:")
-    logger.info("- check_availability (consulta horarios)")
-    logger.info("- create_booking (crea citas/eventos)")
-    logger.info("- search_productos_servicios (busca productos/servicios)")
+    logger.info("Tool interna del agente:")
+    logger.info("- search_kia_modelos (busca modelos KIA)")
     logger.info("=" * 60)
 
     uvicorn.run(
