@@ -1,8 +1,8 @@
 """
-Instancias de CircuitBreaker para las APIs externas de MaravIA.
+Instancias de CircuitBreaker para las APIs externas.
 
-Cada API tiene su propio CB con partición por key (id_empresa, id_chatbot, "global").
-Para agregar una nueva API, crear una instancia aquí y usarla en el servicio.
+Cada API tiene su propio CB con partición por key (id_empresa, "global", etc.).
+Para agregar una nueva API, crear una instancia aquí con _register() y usarla en el servicio.
 
 La clase CircuitBreaker vive en infra/ (infraestructura genérica).
 Las instancias viven aquí (configuración de negocio).
@@ -34,48 +34,32 @@ def get_health_issues() -> list[str]:
 
 
 # ---------------------------------------------------------------------------
-# Instancias compartidas entre servicios
+# Instancias — agregar nuevos circuit breakers aquí con _register()
+#
+# Para proteger una nueva API externa:
+#
+# 1. Crear la instancia aquí:
+#        mi_api_cb: CircuitBreaker = _register(CircuitBreaker(
+#            name="mi_api",
+#            threshold=CB_THRESHOLD,
+#            reset_ttl=CB_RESET_TTL,
+#            max_keys=CB_MAX_KEYS,
+#        ))
+#
+# 2. Exportarla en __all__ y en config/__init__.py
+#
+# 3. Usarla en el servicio con resilient_call (infra/_resilience.py):
+#        from ..config import mi_api_cb
+#        data = await resilient_call(
+#            lambda: post_with_logging(url, payload),
+#            cb=mi_api_cb,
+#            circuit_key=id_empresa,  # o "global" si no es multi-tenant
+#            service_name="MI_API",
+#        )
+#
+# 4. /health reportará "mi_api_degraded" automáticamente si el CB se abre.
 # ---------------------------------------------------------------------------
 
-# Keyed by id_empresa.
-# Compartido por: horario_reuniones, contexto_negocio, productos_servicios_citas, busqueda_productos, schedule_validator
-informacion_cb: CircuitBreaker = _register(CircuitBreaker(
-    name="ws_informacion_ia",
-    threshold=CB_THRESHOLD,
-    reset_ttl=CB_RESET_TTL,
-    max_keys=CB_MAX_KEYS,
-))
-
-# Keyed by id_chatbot.
-# Usado por: preguntas_frecuentes
-preguntas_cb: CircuitBreaker = _register(CircuitBreaker(
-    name="ws_preguntas_frecuentes",
-    threshold=CB_THRESHOLD,
-    reset_ttl=CB_RESET_TTL,
-    max_keys=CB_MAX_KEYS,
-))
-
-# Key fija "global": ws_calendario.php es un servicio compartido de MaravIA.
-# Si cae, cae para todas las empresas. Fallos por empresa (Google Calendar)
-# llegan como success=false → no abren el circuit.
-# Usado por: booking
-calendario_cb: CircuitBreaker = _register(CircuitBreaker(
-    name="ws_calendario",
-    threshold=CB_THRESHOLD,
-    reset_ttl=CB_RESET_TTL,
-    max_keys=CB_MAX_KEYS,
-))
-
-# Keyed by id_empresa. Lecturas: CONSULTAR_DISPONIBILIDAD, SUGERIR_HORARIOS.
-# Usado por: schedule_validator, schedule_recommender, availability_client
-agendar_reunion_cb: CircuitBreaker = _register(CircuitBreaker(
-    name="ws_agendar_reunion",
-    threshold=CB_THRESHOLD,
-    reset_ttl=CB_RESET_TTL,
-    max_keys=CB_MAX_KEYS,
-))
-
 __all__ = [
-    "informacion_cb", "preguntas_cb", "calendario_cb", "agendar_reunion_cb",
     "get_health_issues",
 ]

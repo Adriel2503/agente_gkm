@@ -1,4 +1,4 @@
-"""Re-exporta la configuración del agente de citas (env, timeouts, URLs, circuit breakers)."""
+"""Re-exporta la configuración del agente (env, timeouts, URLs, circuit breakers)."""
 
 from .config import (
     OPENAI_API_KEY,
@@ -27,19 +27,11 @@ from .config import (
     HTTP_MAX_KEEPALIVE,
     REDIS_URL,
     REDIS_CHECKPOINT_TTL_HOURS,
-    API_CALENDAR_URL,
-    API_AGENDAR_REUNION_URL,
-    API_INFORMACION_URL,
-    API_PREGUNTAS_FRECUENTES_URL,
     API_KIA_RAG_URL,
     CALLBACK_URL,
     TIMEZONE,
 )
 from .circuit_breakers import (
-    informacion_cb,
-    preguntas_cb,
-    calendario_cb,
-    agendar_reunion_cb,
     get_health_issues,
 )
 
@@ -60,10 +52,6 @@ __all__ = [
     "AGENT_CACHE_MAXSIZE",
     "SEARCH_CACHE_TTL_MINUTES",
     "SEARCH_CACHE_MAXSIZE",
-    "API_CALENDAR_URL",
-    "API_AGENDAR_REUNION_URL",
-    "API_INFORMACION_URL",
-    "API_PREGUNTAS_FRECUENTES_URL",
     "API_KIA_RAG_URL",
     "TIMEZONE",
     "HTTP_RETRY_ATTEMPTS",
@@ -77,9 +65,5 @@ __all__ = [
     "REDIS_URL",
     "REDIS_CHECKPOINT_TTL_HOURS",
     "CALLBACK_URL",
-    "informacion_cb",
-    "preguntas_cb",
-    "calendario_cb",
-    "agendar_reunion_cb",
     "get_health_issues",
 ]

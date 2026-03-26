@@ -156,25 +156,9 @@ SEARCH_CACHE_TTL_MINUTES: int = _get_int(
 SEARCH_CACHE_MAXSIZE: int = _get_int("SEARCH_CACHE_MAXSIZE", 2000, min_val=10, max_val=10000)
 
 # ---------------------------------------------------------------------------
-# APIs MaravIA (calendario, agendar reunión, información/horarios)
+# API KIA RAG (búsqueda semántica de modelos)
 # ---------------------------------------------------------------------------
 
-API_CALENDAR_URL: str = _get_str(
-    "API_CALENDAR_URL",
-    "https://api.maravia.pe/servicio/ws_calendario.php",
-)
-API_AGENDAR_REUNION_URL: str = _get_str(
-    "API_AGENDAR_REUNION_URL",
-    "https://api.maravia.pe/servicio/ws_agendar_reunion.php",
-)
-API_INFORMACION_URL: str = _get_str(
-    "API_INFORMACION_URL",
-    "https://api.maravia.pe/servicio/ws_informacion_ia.php",
-)
-API_PREGUNTAS_FRECUENTES_URL: str = _get_str(
-    "API_PREGUNTAS_FRECUENTES_URL",
-    "https://api.maravia.pe/servicio/n8n/ws_preguntas_frecuentes.php",
-)
 API_KIA_RAG_URL: str = _get_str(
     "API_KIA_RAG_URL",
     "http://localhost:8000/buscar",
