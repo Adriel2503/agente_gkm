@@ -32,7 +32,7 @@ def get_client() -> httpx.AsyncClient:
     if _client is None:
         _client = httpx.AsyncClient(
             timeout=httpx.Timeout(
-                connect=5.0,
+                connect=10.0,
                 read=app_config.API_TIMEOUT,
                 write=5.0,
                 pool=2.0,
