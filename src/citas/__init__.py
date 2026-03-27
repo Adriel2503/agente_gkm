@@ -16,5 +16,5 @@ Sistema mejorado con:
 
 from importlib.metadata import version as _pkg_version
 
-__version__ = _pkg_version("autos")
+__version__ = _pkg_version("citas")
 __author__ = "Ariel Amado Frias Rojas"
