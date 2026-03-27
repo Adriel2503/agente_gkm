@@ -59,7 +59,7 @@ async def app_lifespan(app: FastAPI):
 
 app = FastAPI(
     lifespan=app_lifespan,
-    title="AutoBot - MaravIA",
+    title="AutoBot",
     description="Agente automotriz multi-tenant",
     version=__version__,
 )
@@ -191,26 +191,20 @@ async def health():
 
 def main():
     logger.info("=" * 60)
-    logger.info("INICIANDO AUTOBOT - MaravIA")
+    logger.info("AUTOBOT v%s", __version__)
     logger.info("=" * 60)
-    logger.info("Host: %s:%s", app_config.SERVER_HOST, app_config.SERVER_PORT)
-    logger.info("Modelo: %s", app_config.OPENAI_MODEL)
-    logger.info("Timeout LLM: %ss", app_config.OPENAI_TIMEOUT)
-    logger.info("Timeout API: %ss", app_config.API_TIMEOUT)
-    logger.info("Cache TTL agente:   %s min", app_config.AGENT_CACHE_TTL_MINUTES)
-    logger.info("Cache TTL búsqueda: %s min", app_config.SEARCH_CACHE_TTL_MINUTES)
-    logger.info("Max mensajes LLM:   %s", app_config.MAX_MESSAGES_HISTORY)
-    logger.info("Timeout chat:       %ss", app_config.CHAT_TIMEOUT)
-    logger.info("Timezone: %s", app_config.TIMEZONE)
-    logger.info("Circuit breaker threshold: %s fallos", app_config.CB_THRESHOLD)
-    logger.info("Redis checkpointer: %s", "activo" if app_config.REDIS_URL else "InMemorySaver")
-    logger.info("Log Level: %s", app_config.LOG_LEVEL)
+    logger.info("Host:       %s:%s", app_config.SERVER_HOST, app_config.SERVER_PORT)
+    logger.info("Modelo:     %s (temp=%.1f, max_tokens=%s)", app_config.OPENAI_MODEL, app_config.OPENAI_TEMPERATURE, app_config.MAX_TOKENS)
+    logger.info("Timeouts:   LLM=%ss | API=%ss | Chat=%ss", app_config.OPENAI_TIMEOUT, app_config.API_TIMEOUT, app_config.CHAT_TIMEOUT)
+    logger.info("Cache:      agente=%smin | búsqueda=%smin | historial=%s msgs", app_config.AGENT_CACHE_TTL_MINUTES, app_config.SEARCH_CACHE_TTL_MINUTES, app_config.MAX_MESSAGES_HISTORY)
+    logger.info("Resiliencia: CB threshold=%s fallos | reset=%ss", app_config.CB_THRESHOLD, app_config.CB_RESET_TTL)
+    logger.info("Checkpointer: %s", "Redis (%s)" % app_config.REDIS_URL if app_config.REDIS_URL else "InMemorySaver")
+    logger.info("Timezone:   %s", app_config.TIMEZONE)
+    logger.info("Log Level:  %s", app_config.LOG_LEVEL)
     logger.info("-" * 60)
-    logger.info("Endpoint: POST /api/chat")
-    logger.info("Health:   GET  /health")
-    logger.info("Metrics:  GET  /metrics")
-    logger.info("Tool interna del agente:")
-    logger.info("- search_kia_modelos (busca modelos KIA)")
+    logger.info("POST /api/chat  → Callback: %s", app_config.CALLBACK_URL or "(no configurada)")
+    logger.info("GET  /health    GET  /metrics")
+    logger.info("Tool: search_kia_modelos (RAG semántica KIA)")
     logger.info("=" * 60)
 
     # Filtrar logs de healthcheck exitosos (200) — los 503 sí se loguean
