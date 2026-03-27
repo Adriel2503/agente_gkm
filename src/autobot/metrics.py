@@ -17,27 +17,27 @@ CHAT_REQUESTS = Counter(
 )
 
 CHAT_ERRORS = Counter(
-    'gqm_CHAT_ERRORS',
+    'gqm_chat_errors_total',
     'Total de errores en el procesamiento de mensajes',
     ['error_type']
 )
 
 # Tools
 TOOL_CALLS = Counter(
-    'gqm_TOOL_CALLS',
+    'gqm_tool_calls_total',
     'Total de llamadas a tools',
     ['tool_name']
 )
 
 TOOL_ERRORS = Counter(
-    'gqm_TOOL_ERRORS',
+    'gqm_tool_errors_total',
     'Total de errores en tools',
     ['tool_name', 'error_type']
 )
 
 # API calls
 API_CALLS = Counter(
-    'gqm_API_CALLS',
+    'gqm_api_calls_total',
     'Total de llamadas a APIs externas',
     ['endpoint', 'status']
 )
@@ -94,28 +94,28 @@ HTTP_DURATION = Histogram(
 )
 
 CHAT_RESPONSE_DURATION = Histogram(
-    'gqm_CHAT_RESPONSE_DURATION',
+    'gqm_chat_response_duration_seconds',
     'Tiempo de respuesta del chat en segundos',
     ['status'],
     buckets=(0.1, 0.5, 1.0, 2.0, 5.0, 10.0, 30.0, 60.0, 90.0)
 )
 
 TOOL_EXECUTION_DURATION = Histogram(
-    'gqm_TOOL_EXECUTION_DURATION',
+    'gqm_tool_execution_duration_seconds',
     'Tiempo de ejecución de tools en segundos',
     ['tool_name'],
     buckets=(0.1, 0.5, 1.0, 2.0, 5.0, 10.0, 20.0, 30.0)
 )
 
 API_CALL_DURATION = Histogram(
-    'gqm_API_CALL_DURATION',
+    'gqm_api_call_duration_seconds',
     'Tiempo de llamadas a API en segundos',
     ['endpoint'],
     buckets=(0.1, 0.25, 0.5, 1.0, 2.5, 5.0, 10.0)
 )
 
 LLM_CALL_DURATION = Histogram(
-    'gqm_LLM_CALL_DURATION',
+    'gqm_llm_call_duration_seconds',
     'Tiempo de llamadas al LLM en segundos',
     ['status'],
     buckets=(0.5, 1.0, 2.0, 5.0, 10.0, 20.0, 30.0, 60.0, 90.0)
@@ -124,7 +124,7 @@ LLM_CALL_DURATION = Histogram(
 # ========== GAUGES (ESTADO ACTUAL) ==========
 
 CACHE_ENTRIES = Gauge(
-    'gqm_CACHE_ENTRIES',
+    'gqm_cache_entries',
     'Número de entradas en cache',
     ['cache_type']
 )
@@ -230,7 +230,7 @@ def record_token_usage(empresa_id: str, input_tokens: int, output_tokens: int):
     LLM_TOKENS_BY_EMPRESA.labels(empresa_id=empresa_id, type="total").inc(total)
 
 
-def initialize_AGENT_INFO(model: str, version: str = "1.0.0"):
+def initialize_agent_info(model: str, version: str = "1.0.0"):
     """Inicializa información del agente."""
     AGENT_INFO.info({
         'version': version,
@@ -250,7 +250,7 @@ __all__ = [
     'record_tool_validation_error',
     'record_token_usage',
     'update_cache_stats',
-    'initialize_AGENT_INFO',
+    'initialize_agent_info',
     # Metrics (para acceso directo si necesario)
     'CHAT_REQUESTS',
     'HTTP_REQUESTS',
