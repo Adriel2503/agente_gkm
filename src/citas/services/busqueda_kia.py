@@ -1,12 +1,19 @@
 """
 Servicio de búsqueda semántica de modelos KIA via RAG API.
 Llama al endpoint /buscar del servicio FastAPI con pgvector.
+
+Resiliencia:
+  - Circuit breaker (kia_rag_cb): 3 fallos de red → abierto 5 min, auto-reset.
+  - Retry: tenacity en post_with_logging → post_with_retry (TransportError, exponential backoff).
+  - Logging: request/response en DEBUG via post_with_logging.
+  - Métricas: track_api_call mide latencia, track_tool_execution mide duración total.
 """
 
 from .. import config as app_config
 from ..logger import get_logger
-from ..metrics import track_tool_execution
-from ..infra.http_client import post_with_retry
+from ..metrics import track_tool_execution, track_api_call
+from ..infra import post_with_logging, resilient_call
+from ..config import kia_rag_cb
 
 logger = get_logger(__name__)
 
@@ -30,10 +37,13 @@ async def buscar_modelos_kia(
             logger.info("[buscar_kia] Llamando RAG API con query: %s", query)
 
         with track_tool_execution("buscar_kia"):
-            response = await post_with_retry(
-                url=app_config.API_KIA_RAG_URL,
-                payload={"query": query},
-            )
+            with track_api_call("kia_rag"):
+                response = await resilient_call(
+                    lambda: post_with_logging(app_config.API_KIA_RAG_URL, {"query": query}),
+                    cb=kia_rag_cb,
+                    circuit_key="global",
+                    service_name="KIA_RAG",
+                )
 
         if not response or "resultados" not in response:
             logger.warning("[buscar_kia] Respuesta inesperada: %s", response)
@@ -43,6 +53,9 @@ async def buscar_modelos_kia(
         logger.debug("[buscar_kia] %d resultado(s) para: %s", len(result["resultados"]), query)
         return result
 
+    except RuntimeError:
+        logger.warning("[buscar_kia] Circuit breaker abierto — RAG API no disponible")
+        return {"success": False, "resultados": [], "error": "Servicio no disponible temporalmente"}
     except Exception as e:
         logger.error("[buscar_kia] Error: %s", e, exc_info=True)
         return {"success": False, "resultados": [], "error": str(e)}

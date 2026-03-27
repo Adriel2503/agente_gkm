@@ -60,6 +60,15 @@ def get_health_issues() -> list[str]:
 # 4. /health reportará "mi_api_degraded" automáticamente si el CB se abre.
 # ---------------------------------------------------------------------------
 
+# Key fija "global": la RAG API es un servicio interno compartido.
+kia_rag_cb: CircuitBreaker = _register(CircuitBreaker(
+    name="kia_rag_api",
+    threshold=CB_THRESHOLD,
+    reset_ttl=CB_RESET_TTL,
+    max_keys=CB_MAX_KEYS,
+))
+
 __all__ = [
+    "kia_rag_cb",
     "get_health_issues",
 ]

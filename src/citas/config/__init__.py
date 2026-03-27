@@ -32,6 +32,7 @@ from .config import (
     TIMEZONE,
 )
 from .circuit_breakers import (
+    kia_rag_cb,
     get_health_issues,
 )
 
@@ -65,5 +66,6 @@ __all__ = [
     "REDIS_URL",
     "REDIS_CHECKPOINT_TTL_HOURS",
     "CALLBACK_URL",
+    "kia_rag_cb",
     "get_health_issues",
 ]
