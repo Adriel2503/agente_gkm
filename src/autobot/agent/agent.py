@@ -15,7 +15,7 @@ from .runtime import (
 )
 from ..tools.tools import AGENT_TOOLS
 from ..logger import get_logger
-from ..metrics import track_chat_response, track_llm_call, record_chat_error, record_token_usage, chat_requests_total, AGENT_CACHE, update_cache_stats
+from ..metrics import track_chat_response, track_llm_call, record_chat_error, record_token_usage, CHAT_REQUESTS, AGENT_CACHE, update_cache_stats
 from .prompts import build_gqm_system_prompt
 from .content import CitaStructuredResponse, _build_content
 from .context import _prepare_agent_context
@@ -148,7 +148,7 @@ async def process_message(
 
     # Registrar request con label de baja cardinalidad (por empresa, no por sesión)
     _empresa_id = str(id_empresa)
-    chat_requests_total.labels(empresa_id=_empresa_id).inc()
+    CHAT_REQUESTS.labels(empresa_id=_empresa_id).inc()
 
     # Serializar requests concurrentes del mismo usuario para evitar condiciones
     # de carrera sobre el mismo thread_id del checkpointer (InMemorySaver).

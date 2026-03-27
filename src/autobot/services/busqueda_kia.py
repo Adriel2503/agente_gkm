@@ -13,7 +13,7 @@ from cachetools import TTLCache
 
 from .. import config as app_config
 from ..logger import get_logger
-from ..metrics import track_tool_execution, track_api_call, degradation_total, SEARCH_CACHE
+from ..metrics import track_tool_execution, track_api_call, DEGRADATION, SEARCH_CACHE
 from ..infra import post_with_logging, resilient_call
 from ..config import kia_rag_cb
 
@@ -71,7 +71,7 @@ async def buscar_modelos_kia(
 
     except RuntimeError:
         SEARCH_CACHE.labels(result="circuit_open").inc()
-        degradation_total.labels(service="kia_rag", reason="circuit_open").inc()
+        DEGRADATION.labels(service="kia_rag", reason="circuit_open").inc()
         logger.warning("[buscar_kia] Circuit breaker abierto — RAG API no disponible")
         return {"success": False, "resultados": [], "error": "Servicio no disponible temporalmente"}
     except Exception as e:

@@ -15,7 +15,7 @@ from langgraph.checkpoint.serde.jsonplus import JsonPlusSerializer
 
 from ... import config as app_config
 from ...logger import get_logger
-from ...metrics import degradation_total
+from ...metrics import DEGRADATION
 
 logger = get_logger(__name__)
 
@@ -82,14 +82,14 @@ async def init_checkpointer() -> None:
         )
 
     except ImportError:
-        degradation_total.labels(service="checkpointer", reason="import_missing").inc()
+        DEGRADATION.labels(service="checkpointer", reason="import_missing").inc()
         logger.warning(
             "[LLM] langgraph-checkpoint-redis no instalado — usando InMemorySaver"
         )
         _checkpointer = _make_memory_saver()
 
     except Exception as e:
-        degradation_total.labels(service="checkpointer", reason="redis_unavailable").inc()
+        DEGRADATION.labels(service="checkpointer", reason="redis_unavailable").inc()
         logger.warning(
             "[LLM] No se pudo conectar a Redis (%s) — usando InMemorySaver", e
         )
