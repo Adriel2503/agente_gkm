@@ -1,5 +1,5 @@
 """
-Sistema de logging centralizado para el agente de citas.
+Sistema de logging centralizado para AutoBot.
 Configura logging consistente en toda la aplicación.
 """
 

@@ -1,5 +1,5 @@
 """
-Lógica del agente especializado en citas usando LangChain 1.2+ API moderna.
+Lógica del agente automotriz usando LangChain 1.2+ API moderna.
 Versión mejorada con logging, métricas, configuración centralizada y memoria automática.
 """
 
@@ -111,7 +111,7 @@ async def process_cita_message(
     config: GQMConfig | None,
 ) -> tuple[str, str | None]:
     """
-    Procesa un mensaje del cliente sobre citas/reuniones usando LangChain 1.2+ Agent.
+    Procesa un mensaje del cliente usando LangChain 1.2+ Agent.
 
     El agente tiene acceso a tools internas:
     - search_kia_modelos: Busca modelos KIA por similitud semántica

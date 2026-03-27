@@ -1,5 +1,5 @@
 """
-Singleton LLM y checkpointer LangGraph para el agente de citas.
+Singleton LLM y checkpointer LangGraph para el agente.
 
 Inicialización lazy del modelo (get_model) igual que get_client en http_client.py.
 El checkpointer se crea en init_checkpointer() (async, llamado desde lifespan).
@@ -32,7 +32,7 @@ def _make_memory_saver() -> InMemorySaver:
     """Crea InMemorySaver con allowlist para CitaStructuredResponse (path msgpack)."""
     return InMemorySaver(
         serde=JsonPlusSerializer(
-            allowed_msgpack_modules=[("citas.agent.content", "CitaStructuredResponse")]
+            allowed_msgpack_modules=[("autobot.agent.content", "CitaStructuredResponse")]
         )
     )
 
@@ -66,10 +66,10 @@ async def init_checkpointer() -> None:
         saver = AsyncRedisSaver(redis_url=app_config.REDIS_URL, ttl=ttl_config)
         saver.serde = JsonPlusRedisSerializer(
             allowed_json_modules=[
-                ("citas", "agent", "content", "CitaStructuredResponse")
+                ("autobot", "agent", "content", "CitaStructuredResponse")
             ],
             allowed_msgpack_modules=[
-                ("citas.agent.content", "CitaStructuredResponse")
+                ("autobot.agent.content", "CitaStructuredResponse")
             ],
         )
         await saver.asetup()

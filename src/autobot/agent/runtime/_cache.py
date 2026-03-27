@@ -1,5 +1,5 @@
 """
-Caches y locks para el agente de citas.
+Caches y locks para el agente.
 
 Contiene:
   - TTLCache de agentes compilados (_agent_cache)

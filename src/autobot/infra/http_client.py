@@ -1,5 +1,5 @@
 """
-Cliente HTTP compartido para todos los servicios de agent_citas.
+Cliente HTTP compartido para todos los servicios de AutoBot.
 
 Inicialización lazy: el cliente se crea en la primera llamada a get_client()
 y se cierra limpiamente en el lifespan del servidor MCP (close_http_client).

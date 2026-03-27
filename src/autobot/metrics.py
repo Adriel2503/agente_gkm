@@ -1,5 +1,5 @@
 """
-Sistema de métricas y observabilidad para el agente de citas.
+Sistema de métricas y observabilidad para AutoBot.
 Usa Prometheus para tracking de performance y uso.
 """
 
@@ -30,12 +30,12 @@ booking_attempts_total = Counter(
 
 booking_success_total = Counter(
     'gqm_booking_success_total',
-    'Total de citas exitosas'
+    'Total de bookings exitosos'
 )
 
 booking_failed_total = Counter(
     'gqm_booking_failed_total',
-    'Total de citas fallidas',
+    'Total de bookings fallidos',
     ['reason']
 )
 
@@ -138,7 +138,7 @@ cache_entries = Gauge(
 
 agent_info = Info(
     'gqm_info',
-    'Información del agente de citas'
+    'Información del agente AutoBot'
 )
 
 # ========== CONTEXT MANAGERS ==========

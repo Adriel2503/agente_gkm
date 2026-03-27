@@ -1,5 +1,5 @@
 """
-Prompts del agente de citas. Builder del system prompt.
+Prompts del agente. Builder del system prompt.
 """
 
 import asyncio
@@ -28,7 +28,7 @@ _jinja_env = Environment(
     loader=FileSystemLoader(str(_TEMPLATES_DIR)),
     autoescape=select_autoescape(disabled_extensions=()),
 )
-_citas_template = _jinja_env.get_template("gqm_system.j2")
+_system_template = _jinja_env.get_template("gqm_system.j2")
 
 
 def _now_peru() -> datetime:
@@ -41,7 +41,7 @@ async def build_gqm_system_prompt(
     config: GQMConfig | None,
 ) -> str:
     """
-    Construye el system prompt del agente de citas.
+    Construye el system prompt del agente.
 
     Args:
         id_empresa: ID de la empresa (tenant key).
@@ -92,7 +92,7 @@ async def build_gqm_system_prompt(
     # 4. Usar {{ horario }} y {{ faqs }} en gqm_system.j2
     # -----------------------------------------------------------------------
 
-    return _citas_template.render(**variables)
+    return _system_template.render(**variables)
 
 
 __all__ = ["build_gqm_system_prompt"]

@@ -1,5 +1,5 @@
 """
-Agente de citas - LangChain 1.2+ Agent.
+AutoBot Agent - LangChain 1.2+.
 """
 
 from .agent import process_cita_message

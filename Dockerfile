@@ -32,4 +32,4 @@ USER appuser
 
 EXPOSE 8002
 
-CMD ["python", "-m", "citas.main"]
+CMD ["python", "-m", "autobot.main"]

@@ -3,7 +3,7 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "citas"
+name = "autobot"
 version = "2.5.0"
 requires-python = ">=3.12"
 dependencies = [
@@ -35,7 +35,7 @@ dependencies = [
 ]
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/citas"]
+packages = ["src/autobot"]
 
 [dependency-groups]
 dev = [

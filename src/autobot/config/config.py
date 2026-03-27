@@ -1,5 +1,5 @@
 """
-Configuración del agente de citas (env, credenciales).
+Configuración del agente AutoBot (env, credenciales).
 Incluye validación de tipos/valores y anotaciones para IDE y documentación.
 """
 
@@ -81,7 +81,7 @@ def _get_log_level(key: str, default: str) -> str:
     return default.upper()
 
 # ---------------------------------------------------------------------------
-# OpenAI (agente especializado en citas)
+# OpenAI (modelo LLM del agente)
 # ---------------------------------------------------------------------------
 
 OPENAI_API_KEY: str = _get_str("OPENAI_API_KEY", "")

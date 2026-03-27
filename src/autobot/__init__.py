@@ -1,5 +1,5 @@
 """
-Agente especializado en citas - MaravIA
+AutoBot - Agente automotriz MaravIA
 
 LangChain 1.2+ API Moderna
 
@@ -16,5 +16,5 @@ Sistema mejorado con:
 
 from importlib.metadata import version as _pkg_version
 
-__version__ = _pkg_version("citas")
+__version__ = _pkg_version("autobot")
 __author__ = "Ariel Amado Frias Rojas"

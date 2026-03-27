@@ -1,5 +1,5 @@
 """
-Servidor HTTP del agente especializado en citas / reuniones.
+Servidor HTTP del agente automotriz AutoBot.
 Expone POST /api/chat compatible con el gateway Go.
 
 Versión mejorada con logging, métricas y observabilidad.
@@ -58,8 +58,8 @@ async def app_lifespan(app: FastAPI):
 
 app = FastAPI(
     lifespan=app_lifespan,
-    title="Agente Citas - MaravIA",
-    description="Agente especializado en gestión de citas y reuniones",
+    title="AutoBot - MaravIA",
+    description="Agente automotriz multi-tenant",
     version=__version__,
 )
 
@@ -174,7 +174,7 @@ async def health():
     status = "degraded" if issues else "ok"
     return JSONResponse(
         status_code=503 if issues else 200,
-        content={"status": status, "agent": "citas", "version": __version__, "issues": issues},
+        content={"status": status, "agent": "autobot", "version": __version__, "issues": issues},
     )
 
 
@@ -184,7 +184,7 @@ async def health():
 
 def main():
     logger.info("=" * 60)
-    logger.info("INICIANDO AGENTE CITAS - MaravIA")
+    logger.info("INICIANDO AUTOBOT - MaravIA")
     logger.info("=" * 60)
     logger.info("Host: %s:%s", app_config.SERVER_HOST, app_config.SERVER_PORT)
     logger.info("Modelo: %s", app_config.OPENAI_MODEL)
