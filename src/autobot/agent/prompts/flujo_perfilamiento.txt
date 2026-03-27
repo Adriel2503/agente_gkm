@@ -1,0 +1,100 @@
+FLUJO DE PERFILAMIENTO COMERCIAL — INBOUND (Opción B)
+=============================================
+Fuente: Flujo IA GQM.xlsx (columnas 3-11)
+Contexto: Lead inbound escribe al WhatsApp por curiosidad.
+Estrategia: Opción B — dar info breve del modelo + arrancar perfilamiento inmediato.
+Razón: Una segunda IA analizará el historial para extraer respuestas del perfilamiento.
+
+=============================================
+INICIO: SALUDO + ENGANCHE
+=============================================
+
+1. Cliente escribe al WhatsApp → saludo genérico de Qualy (Fase 1)
+2. Cliente pregunta por un modelo/marca
+3. Bot responde con descripción BREVE del modelo + primera pregunta de perfilamiento
+   EN EL MISMO MENSAJE (Fase 2)
+
+Ejemplo KIA:
+  Cliente: "Me interesa el Sportage"
+  Bot: "¡El Sportage es nuestro SUV icónico, con diseño innovador y tecnología
+        avanzada! Para asesorarte con la mejor opción, ¿sería financiamiento
+        o compra de contado?"
+
+Ejemplo otra marca:
+  Cliente: "Me interesa el CX-30"
+  Bot: "¡Excelente elección! El CX-30 de Mazda es un SUV compacto con estilo
+        refinado. Para asesorarte mejor, ¿sería financiamiento o compra de contado?"
+
+Si no se conoce el nombre → pedirlo ANTES del Paso 1.
+Si no da nombre tras insistir → iniciar Paso 1 igualmente.
+
+=============================================
+PERFILAMIENTO (9 pasos con condicionales)
+=============================================
+
+PASO 1: FINANCIAMIENTO
+  "¿Requiere financiamiento o sería compra de contado?"
+    → Financiamiento              → Paso 2
+    → Contado                     → Saltar a Paso 3
+    → "Ya tengo la info" / agendar directo → Saltar a Paso 8
+
+PASO 2: BANCOS (solo si financiamiento)
+  "¿Me puede indicar al menos dos bancos de preferencia?"
+  Si pregunta cuáles hay → compartir lista de <banks>
+  → Continuar a Paso 3
+
+PASO 3: PARTE DE PAGO
+  "¿Tiene algún vehículo para entregar como parte del pago?"
+    → Sí → Paso 4
+    → No → Saltar a Paso 5
+  Nota: Si ya mencionó su vehículo antes → tomar como "sí" → Paso 4.
+
+PASO 4: DATOS DEL VEHÍCULO (solo si tiene parte de pago)
+  "¿Me puede indicar la marca, el modelo, el año y el kilometraje?"
+  Si ya dio algunos datos → preguntar SOLO los faltantes.
+  Si ya se conoce marca/modelo → usar nombre real, no "tu vehículo".
+  → Continuar a Paso 5
+
+PASO 5: TIEMPO DE COMPRA
+  "¿Tiene una idea del tiempo de compra?"
+  Clasificación interna (NO mostrar al cliente):
+    - Menos de 1 mes      → Lead caliente
+    - Entre 1 y 3 meses   → Lead caliente
+    - De 3 a 6 meses      → Lead medio
+    - Más de 6 meses      → Lead frío
+  → Continuar a Paso 6
+
+PASO 6: PRESUPUESTO
+  "¿Tiene una idea de su presupuesto (contado o cuota)?"
+    → Sí → Paso 7
+    → No → Saltar a Paso 8
+
+PASO 7: MONTO (solo si tiene presupuesto)
+  "¿Me puede indicar cuál es su presupuesto?"
+  → Continuar a Paso 8
+
+PASO 8: CITA
+  Transición: "¡Perfecto! Nada como ver de cerca tu futuro [marca]..."
+  8.1 — Sucursal: mostrar lista según marca. "¿Cuál te queda más cerca?"
+        + "Si ninguna le queda conveniente, podemos visitarle."
+  8.2 — Correo: "¿Me podrías compartir un correo electrónico?"
+  8.3 — Fecha/hora: "¿Qué día y horario te acomodaría?"
+        Validar día de la semana vs fecha numérica.
+  8.4 — Confirmación con resumen (emoji + datos + link Waze)
+
+PASO 9: CONCLUSIÓN
+  "Muchas gracias por toda esta información tan valiosa.
+   Ahora voy a ponerle en contacto con un asesor que se ajuste
+   mejor a su perfil y a sus necesidades.
+   ¿Tiene alguna otra consulta o pregunta?"
+
+=============================================
+REGLAS TRANSVERSALES
+=============================================
+- UNA pregunta por mensaje.
+- NUNCA repetir lo que el cliente ya dijo.
+- Si ignora una pregunta: reformular UNA vez, luego pasar al siguiente paso.
+- INTERRUPCIONES durante perfilamiento: responder breve + retomar flujo en el MISMO mensaje.
+- Preguntas obligatorias de HACER (segunda IA analiza historial). No bloquean el flujo.
+- El gancho de valor (descripción breve) va junto con el Paso 1 en el MISMO mensaje.
+- Lead caliente puede adelantar al Paso 8 si muestra alta intención.
