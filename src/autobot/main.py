@@ -17,7 +17,7 @@ from fastapi.responses import JSONResponse
 from prometheus_client import make_asgi_app
 
 from . import config as app_config, __version__
-from .agent import process_cita_message, init_checkpointer, close_checkpointer
+from .agent import process_message, init_checkpointer, close_checkpointer
 from .logger import setup_logging, get_logger
 from .metrics import initialize_agent_info, HTTP_REQUESTS, HTTP_DURATION
 from .infra import close_http_client
@@ -111,7 +111,7 @@ async def _process_and_callback(req: ChatRequest) -> None:
 
     try:
         reply, url = await asyncio.wait_for(
-            process_cita_message(
+            process_message(
                 message=req.question,
                 phone=req.phone,
                 id_empresa=req.id_empresa,
@@ -124,7 +124,7 @@ async def _process_and_callback(req: ChatRequest) -> None:
         _http_status = "timeout"
         reply = f"La solicitud tardó más de {app_config.CHAT_TIMEOUT}s. Por favor, intenta de nuevo."
         url = None
-        logger.error("[HTTP] Timeout en process_cita_message (CHAT_TIMEOUT=%s)", app_config.CHAT_TIMEOUT)
+        logger.error("[HTTP] Timeout en process_message (CHAT_TIMEOUT=%s)", app_config.CHAT_TIMEOUT)
 
     except ValueError as e:
         _http_status = "error"

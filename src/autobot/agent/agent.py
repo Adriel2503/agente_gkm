@@ -104,7 +104,7 @@ async def _get_agent(id_empresa: int, config: GQMConfig | None):
         release_agent_lock(cache_key)
 
 
-async def process_cita_message(
+async def process_message(
     message: str,
     phone: str,
     id_empresa: int,
