@@ -9,6 +9,7 @@ import asyncio
 import json
 import logging
 import time
+import uuid
 from contextlib import asynccontextmanager
 
 import uvicorn
@@ -18,7 +19,7 @@ from prometheus_client import make_asgi_app
 
 from . import config as app_config, __version__
 from .agent import process_message, init_checkpointer, close_checkpointer
-from .logger import setup_logging, get_logger
+from .logger import setup_logging, get_logger, trace_id
 from .metrics import initialize_agent_info, HTTP_REQUESTS, HTTP_DURATION
 from .infra import close_http_client
 from .config import get_health_issues
@@ -96,6 +97,7 @@ async def chat(req: ChatRequest) -> AckResponse:
     Recibe mensaje y responde 200 inmediatamente.
     El agente procesa en background y envía el resultado al CALLBACK_URL.
     """
+    trace_id.set(uuid.uuid4().hex[:8])
     logger.info("[HTTP] Mensaje recibido - Session: %s, Empresa: %s, Length: %s chars", req.phone, req.id_empresa, len(req.question))
     logger.info("[HTTP] JSON entrada:\n%s", json.dumps(req.model_dump(), indent=2, ensure_ascii=False))
     logger.debug("[HTTP] Message: %s...", req.question[:100])
@@ -132,6 +134,10 @@ async def _process_and_callback(req: ChatRequest) -> None:
         url = None
         logger.error("[HTTP] %s", reply)
 
+    except asyncio.CancelledError:
+        _http_status = None  # No contar requests abortados externamente
+        raise
+
     except Exception as e:
         _http_status = "error"
         reply = f"Error procesando mensaje: {str(e)}"
@@ -139,8 +145,9 @@ async def _process_and_callback(req: ChatRequest) -> None:
         logger.error("[HTTP] %s", reply, exc_info=True)
 
     finally:
-        HTTP_REQUESTS.labels(status=_http_status).inc()
-        HTTP_DURATION.observe(time.perf_counter() - _start)
+        if _http_status is not None:
+            HTTP_REQUESTS.labels(status=_http_status).inc()
+            HTTP_DURATION.observe(time.perf_counter() - _start)
 
     # Enviar respuesta al callback
     if not app_config.CALLBACK_URL:
@@ -205,6 +212,14 @@ def main():
     logger.info("Tool interna del agente:")
     logger.info("- search_kia_modelos (busca modelos KIA)")
     logger.info("=" * 60)
+
+    # Filtrar logs de healthcheck exitosos (200) — los 503 sí se loguean
+    class _HealthLogFilter(logging.Filter):
+        def filter(self, record: logging.LogRecord) -> bool:
+            msg = record.getMessage()
+            return not ('"GET /health' in msg and "200" in msg)
+
+    logging.getLogger("uvicorn.access").addFilter(_HealthLogFilter())
 
     uvicorn.run(
         app,

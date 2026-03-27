@@ -5,7 +5,21 @@ Configura logging consistente en toda la aplicación.
 
 import logging
 import sys
+from contextvars import ContextVar
+from logging.handlers import RotatingFileHandler
 from pathlib import Path
+
+# Trace ID por request — se setea en main.py al recibir cada request.
+# ContextVar propaga automáticamente a todas las coroutines hijas.
+trace_id: ContextVar[str] = ContextVar("trace_id", default="-")
+
+
+class _TraceFilter(logging.Filter):
+    """Inyecta trace_id en cada log record para correlacionar logs por request."""
+
+    def filter(self, record):
+        record.trace_id = trace_id.get()
+        return True
 
 
 def setup_logging(
@@ -22,7 +36,7 @@ def setup_logging(
         log_format: Formato personalizado de log (opcional)
     """
     if log_format is None:
-        log_format = '%(asctime)s - %(name)s - %(levelname)s - [%(filename)s:%(lineno)d] - %(message)s'
+        log_format = '%(asctime)s - %(name)s - %(levelname)s - [%(filename)s:%(lineno)d] - [trace=%(trace_id)s] - %(message)s'
     
     handlers = [logging.StreamHandler(sys.stdout)]
     
@@ -30,8 +44,18 @@ def setup_logging(
     if log_file:
         log_path = Path(log_file)
         log_path.parent.mkdir(parents=True, exist_ok=True)
-        handlers.append(logging.FileHandler(log_file, encoding='utf-8'))
+        handlers.append(RotatingFileHandler(
+            log_file,
+            maxBytes=10_485_760,  # 10 MB por archivo
+            backupCount=5,        # app.log, app.log.1, ..., app.log.5
+            encoding='utf-8',
+        ))
     
+    # Inyectar trace_id en todos los handlers
+    _trace_filter = _TraceFilter()
+    for handler in handlers:
+        handler.addFilter(_trace_filter)
+
     # Configurar logging root
     logging.basicConfig(
         level=level,
@@ -64,4 +88,4 @@ def get_logger(name: str) -> logging.Logger:
     return logging.getLogger(name)
 
 
-__all__ = ["setup_logging", "get_logger"]
+__all__ = ["setup_logging", "get_logger", "trace_id"]
