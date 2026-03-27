@@ -22,6 +22,7 @@ from .agent import process_message, init_checkpointer, close_checkpointer
 from .logger import setup_logging, get_logger, trace_id
 from .metrics import initialize_agent_info, HTTP_REQUESTS, HTTP_DURATION
 from .infra import close_http_client
+from .tools.tools import AGENT_TOOLS
 from .config import get_health_issues
 from .schemas import ChatRequest, ChatResponse, AckResponse, CallbackRequest
 from .infra.http_client import get_client
@@ -204,7 +205,9 @@ def main():
     logger.info("-" * 60)
     logger.info("POST /api/chat  → Callback: %s", app_config.CALLBACK_URL or "(no configurada)")
     logger.info("GET  /health    GET  /metrics")
-    logger.info("Tool: search_kia_modelos (RAG semántica KIA)")
+    logger.info("Tools (%s):", len(AGENT_TOOLS))
+    for t in AGENT_TOOLS:
+        logger.info("  - %s", t.name)
     logger.info("=" * 60)
 
     # Filtrar logs de healthcheck exitosos (200) — los 503 sí se loguean
