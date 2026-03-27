@@ -22,23 +22,6 @@ chat_errors_total = Counter(
     ['error_type']
 )
 
-# Citas
-booking_attempts_total = Counter(
-    'gqm_booking_attempts_total',
-    'Total de intentos de cita'
-)
-
-booking_success_total = Counter(
-    'gqm_booking_success_total',
-    'Total de bookings exitosos'
-)
-
-booking_failed_total = Counter(
-    'gqm_booking_failed_total',
-    'Total de bookings fallidos',
-    ['reason']
-)
-
 # Tools
 tool_calls_total = Counter(
     'gqm_tool_calls_total',
@@ -80,14 +63,13 @@ SEARCH_CACHE = Counter(
     ['result'],  # hit | miss | circuit_open
 )
 
-# Degradación de validación (B2 — riesgo de double booking)
+# Degradación de servicios (fallback silencioso)
 degradation_total = Counter(
     'gqm_availability_degradation_total',
-    'Veces que la validación degradó a available=True o valid=True por fallo',
+    'Veces que un servicio degradó por fallo y se usó fallback',
     ['service', 'reason'],
-    # service: availability_check | schedule_fetch
-    # reason: timeout | circuit_open | api_success_false | http_error |
-    #         transport_error | parse_error | unknown
+    # service: kia_rag | checkpointer
+    # reason: circuit_open | redis_unavailable | import_missing
 )
 
 # ========== HISTOGRAMAS (LATENCIA) ==========
@@ -209,21 +191,6 @@ def track_llm_call():
 
 # ========== FUNCIONES DE UTILIDAD ==========
 
-def record_booking_attempt():
-    """Registra un intento de cita."""
-    booking_attempts_total.inc()
-
-
-def record_booking_success():
-    """Registra una cita exitosa."""
-    booking_success_total.inc()
-
-
-def record_booking_failure(reason: str):
-    """Registra una cita fallida."""
-    booking_failed_total.labels(reason=reason).inc()
-
-
 def record_chat_error(error_type: str):
     """Registra un error en el chat."""
     chat_errors_total.labels(error_type=error_type).inc()
@@ -255,17 +222,12 @@ __all__ = [
     'track_api_call',
     'track_llm_call',
     # Recording functions
-    'record_booking_attempt',
-    'record_booking_success',
-    'record_booking_failure',
     'record_chat_error',
     'record_tool_validation_error',
     'update_cache_stats',
     'initialize_agent_info',
     # Metrics (para acceso directo si necesario)
     'chat_requests_total',
-    'booking_success_total',
-    'booking_failed_total',
     'HTTP_REQUESTS',
     'HTTP_DURATION',
     'AGENT_CACHE',

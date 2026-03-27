@@ -9,13 +9,20 @@ Resiliencia:
   - Métricas: track_api_call mide latencia, track_tool_execution mide duración total.
 """
 
+from cachetools import TTLCache
+
 from .. import config as app_config
 from ..logger import get_logger
-from ..metrics import track_tool_execution, track_api_call
+from ..metrics import track_tool_execution, track_api_call, degradation_total, SEARCH_CACHE
 from ..infra import post_with_logging, resilient_call
 from ..config import kia_rag_cb
 
 logger = get_logger(__name__)
+
+_search_cache: TTLCache = TTLCache(
+    maxsize=app_config.SEARCH_CACHE_MAXSIZE,
+    ttl=app_config.SEARCH_CACHE_TTL_MINUTES * 60,
+)
 
 
 async def buscar_modelos_kia(
@@ -32,6 +39,13 @@ async def buscar_modelos_kia(
     Returns:
         {"success": bool, "resultados": [...], "error": str | None}
     """
+    cache_key = query.strip().lower()
+    cached = _search_cache.get(cache_key)
+    if cached is not None:
+        SEARCH_CACHE.labels(result="hit").inc()
+        logger.debug("[buscar_kia] Cache hit para: %s", query)
+        return cached
+
     try:
         if log_apis:
             logger.info("[buscar_kia] Llamando RAG API con query: %s", query)
@@ -49,11 +63,15 @@ async def buscar_modelos_kia(
             logger.warning("[buscar_kia] Respuesta inesperada: %s", response)
             return {"success": False, "resultados": [], "error": "Respuesta inesperada de la API"}
 
+        SEARCH_CACHE.labels(result="miss").inc()
         result = {"success": True, "resultados": response["resultados"], "error": None}
+        _search_cache[cache_key] = result
         logger.debug("[buscar_kia] %d resultado(s) para: %s", len(result["resultados"]), query)
         return result
 
     except RuntimeError:
+        SEARCH_CACHE.labels(result="circuit_open").inc()
+        degradation_total.labels(service="kia_rag", reason="circuit_open").inc()
         logger.warning("[buscar_kia] Circuit breaker abierto — RAG API no disponible")
         return {"success": False, "resultados": [], "error": "Servicio no disponible temporalmente"}
     except Exception as e:

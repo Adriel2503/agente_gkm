@@ -8,7 +8,7 @@ from langchain.tools import tool, ToolRuntime
 
 from ..services.busqueda_kia import buscar_modelos_kia, format_kia_resultados
 from ..logger import get_logger
-from ..metrics import track_tool_execution
+from ..metrics import track_tool_execution, record_tool_validation_error
 
 logger = get_logger(__name__)
 
@@ -33,6 +33,10 @@ async def search_kia_modelos(
         Información de los modelos KIA más relevantes para la búsqueda
     """
     logger.info("[search_kia_modelos] Tool en uso: search_kia_modelos, query=%s", query)
+
+    if not query or not query.strip():
+        record_tool_validation_error("search_kia_modelos")
+        return "Necesito un término de búsqueda para buscar modelos KIA."
 
     try:
         with track_tool_execution("search_kia_modelos"):
