@@ -63,6 +63,19 @@ SEARCH_CACHE = Counter(
     ['result'],  # hit | miss | circuit_open
 )
 
+# Tokens LLM
+LLM_TOKENS = Counter(
+    'gqm_llm_tokens_total',
+    'Total de tokens consumidos',
+    ['type'],  # input | output | total
+)
+
+LLM_TOKENS_BY_EMPRESA = Counter(
+    'gqm_llm_tokens_by_empresa_total',
+    'Tokens consumidos por empresa',
+    ['empresa_id', 'type'],  # input | output | total
+)
+
 # Degradación de servicios (fallback silencioso)
 degradation_total = Counter(
     'gqm_availability_degradation_total',
@@ -206,6 +219,17 @@ def update_cache_stats(cache_type: str, count: int):
     cache_entries.labels(cache_type=cache_type).set(count)
 
 
+def record_token_usage(empresa_id: str, input_tokens: int, output_tokens: int):
+    """Registra tokens consumidos (global + por empresa)."""
+    total = input_tokens + output_tokens
+    LLM_TOKENS.labels(type="input").inc(input_tokens)
+    LLM_TOKENS.labels(type="output").inc(output_tokens)
+    LLM_TOKENS.labels(type="total").inc(total)
+    LLM_TOKENS_BY_EMPRESA.labels(empresa_id=empresa_id, type="input").inc(input_tokens)
+    LLM_TOKENS_BY_EMPRESA.labels(empresa_id=empresa_id, type="output").inc(output_tokens)
+    LLM_TOKENS_BY_EMPRESA.labels(empresa_id=empresa_id, type="total").inc(total)
+
+
 def initialize_agent_info(model: str, version: str = "1.0.0"):
     """Inicializa información del agente."""
     agent_info.info({
@@ -224,6 +248,7 @@ __all__ = [
     # Recording functions
     'record_chat_error',
     'record_tool_validation_error',
+    'record_token_usage',
     'update_cache_stats',
     'initialize_agent_info',
     # Metrics (para acceso directo si necesario)
@@ -232,5 +257,7 @@ __all__ = [
     'HTTP_DURATION',
     'AGENT_CACHE',
     'SEARCH_CACHE',
+    'LLM_TOKENS',
+    'LLM_TOKENS_BY_EMPRESA',
     'degradation_total',
 ]
