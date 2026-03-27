@@ -15,7 +15,7 @@ dist/
 .eggs/
 
 # uv (package manager)
-uv.lock
+# uv.lock se commitea (lockfile reproducible para Docker)
 .uv/
 .claude 
 .agents
