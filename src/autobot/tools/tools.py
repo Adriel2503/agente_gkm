@@ -20,19 +20,15 @@ async def search_kia_modelos(
 ) -> str:
     """
     Busca modelos de autos KIA por similitud semántica en el catálogo.
-    Úsala SIEMPRE que el cliente pregunte por modelos, precios, cuotas,
-    colores disponibles, fichas técnicas o cualquier dato de los vehículos KIA.
-
-    Devuelve hasta 3 modelos con información completa agrupada por secciones:
-    Identificación, Descripción, Precio y garantía, Motor y rendimiento,
-    Dimensiones, Exterior, Interior y confort, Tecnología, Seguridad,
-    Suspensión y Mantenimiento.
+    Devuelve información completa agrupada por secciones: Identificación,
+    Descripción, Precio, Motor, Dimensiones, Exterior, Interior, Tecnología,
+    Seguridad, Suspensión y Mantenimiento.
 
     Args:
-        query: Texto libre de búsqueda (ej: "auto familiar económico", "New Picanto", "SUV menos de 40 mil")
+        query: Texto libre de búsqueda (ej: "auto familiar", "Picanto", "SUV barato")
 
     Returns:
-        Información completa de los modelos KIA más relevantes para la búsqueda
+        Información de hasta 3 modelos KIA relevantes
     """
     logger.info("[search_kia_modelos] Tool en uso: search_kia_modelos, query=%s", query)
 
