@@ -79,28 +79,75 @@ async def buscar_modelos_kia(
         return {"success": False, "resultados": [], "error": str(e)}
 
 
+# Campos que van en el encabezado (no se repiten en los grupos)
+_HEADER_FIELDS: set[str] = {"marca", "modelo", "anio_modelo", "detalle_version", "version_gama", "precio_lista_usd"}
+
+_FIELD_GROUPS: dict[str, set[str]] = {
+    "Identificación": {"id", "variante", "tipo_carroceria", "tipo_de_gama"},
+    "Descripción": {"introduccion", "descripcion_modelo", "caracteristicas_generales"},
+    "Precio y garantía": {"garantia", "paquete_mantenimiento"},
+    "Motor y rendimiento": {"motor_cilindros", "cilindrada_combustible_tipo", "potencia", "torque", "transmision", "traccion", "autonomia_ev"},
+    "Dimensiones": {"dimensiones", "distancia_entre_ejes", "tamanio_aros", "capacidad_maletera", "numero_asientos"},
+    "Exterior": {"colores_disponibles", "faros_delanteros_led", "faros_posteriores_led", "faros_neblineros", "rieles_techo"},
+    "Interior y confort": {"material_asientos", "asientos_electricos", "volante_forrado_cuero", "aire_acondicionado", "sunroof", "cargador_inalambrico", "maletero_inteligente", "espejos_electricos", "alzavidrios_electricos"},
+    "Tecnología": {"radio_tactil", "conectividad_radio", "panel_instrumentos", "tipo_llave", "camara_retroceso", "sensores_estacionamiento"},
+    "Seguridad": {"airbags", "sistema_frenos", "tipo_frenos", "freno_estacionamiento", "monitor_punto_ciego", "fca", "bca", "lka", "rcca", "lfa", "control_crucero"},
+    "Suspensión": {"suspension_delantera", "suspension_posterior", "llanta_repuesto"},
+    "Mantenimiento": {"primer_servicio_mantenimiento", "frecuencia_mantenimiento"},
+}
+
+_ALL_GROUPED: set[str] = _HEADER_FIELDS | set().union(*_FIELD_GROUPS.values())
+
+
 def format_kia_resultados(resultados: list[dict]) -> str:
-    """Formatea los resultados del RAG para que el LLM los presente bien."""
+    """Formatea los resultados del RAG para que el LLM los presente bien.
+
+    Encabezado con marca, modelo, año, versión, gama y precio.
+    Luego TODOS los campos agrupados por categoría. Si la API agrega campos
+    nuevos, aparecen automáticamente en el grupo "Otros".
+    """
     if not resultados:
         return "No encontré modelos que coincidan con tu búsqueda."
 
     lineas = []
     for r in resultados:
-        precio = r.get('precio_usd')
-        cuota = r.get('cuota_bancaria')
-        precio_str = f"${precio:,}" if precio else "N/A"
-        cuota_str = f"${cuota}/mes" if cuota else "N/A"
+        # Encabezado: marca + modelo + año
+        marca = r.get("marca", "N/A")
+        modelo = r.get("modelo", "N/A")
+        anio = r.get("anio_modelo", "")
+        lineas.append(f"=== {marca} {modelo} {anio} ===")
 
-        lineas.append(f"🚗 **{r.get('modelo', 'N/A')}** — {r.get('detalle_version', '')}")
-        lineas.append(f"   Gama: {r.get('gama', 'N/A')} | Año: {r.get('año', 'N/A')}")
-        lineas.append(f"   Precio: {precio_str} | Cuota desde: {cuota_str}")
-        lineas.append(f"   Colores: {r.get('colores', 'N/A')}")
-        if r.get("introduccion"):
-            lineas.append(f"   {r['introduccion']}")
-        if r.get("url_pdf"):
-            lineas.append(f"   📄 Ficha técnica: {r['url_pdf']}")
-        if r.get("url_video"):
-            lineas.append(f"   🎥 Video: {r['url_video']}")
+        # Subencabezado: versión | gama | precio
+        sub = []
+        if r.get("detalle_version"):
+            sub.append(r["detalle_version"])
+        if r.get("version_gama"):
+            sub.append(r["version_gama"])
+        if r.get("precio_lista_usd"):
+            sub.append(r["precio_lista_usd"])
+        if sub:
+            lineas.append(" | ".join(sub))
+
+        # Grupos de campos
+        for group_name, fields in _FIELD_GROUPS.items():
+            group_lines = []
+            for key in fields:
+                value = r.get(key)
+                if value is not None and value != "" and value != "N/A":
+                    group_lines.append(f"  {key}: {value}")
+            if group_lines:
+                lineas.append(f"[{group_name}]")
+                lineas.extend(sorted(group_lines))
+
+        # Campos no agrupados (nuevos de la API)
+        otros = []
+        for key, value in r.items():
+            if key not in _ALL_GROUPED and value is not None and value != "" and value != "N/A":
+                otros.append(f"  {key}: {value}")
+        if otros:
+            lineas.append("[Otros]")
+            lineas.extend(sorted(otros))
+
         lineas.append("")
 
     return "\n".join(lineas).strip()
