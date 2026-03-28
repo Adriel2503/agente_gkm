@@ -23,14 +23,16 @@ async def search_kia_modelos(
     Úsala SIEMPRE que el cliente pregunte por modelos, precios, cuotas,
     colores disponibles, fichas técnicas o cualquier dato de los vehículos KIA.
 
-    Devuelve hasta 3 modelos con: nombre, versión, gama, año, precio,
-    cuota bancaria, colores, descripción, ficha técnica (PDF) y video.
+    Devuelve hasta 3 modelos con información completa agrupada por secciones:
+    Identificación, Descripción, Precio y garantía, Motor y rendimiento,
+    Dimensiones, Exterior, Interior y confort, Tecnología, Seguridad,
+    Suspensión y Mantenimiento.
 
     Args:
         query: Texto libre de búsqueda (ej: "auto familiar económico", "New Picanto", "SUV menos de 40 mil")
 
     Returns:
-        Información de los modelos KIA más relevantes para la búsqueda
+        Información completa de los modelos KIA más relevantes para la búsqueda
     """
     logger.info("[search_kia_modelos] Tool en uso: search_kia_modelos, query=%s", query)
 
