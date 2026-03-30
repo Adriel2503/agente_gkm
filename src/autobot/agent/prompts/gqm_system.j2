@@ -71,29 +71,45 @@ Fecha para herramientas: {{ fecha_iso }} (YYYY-MM-DD). Si el cliente dice "hoy",
 Presenta la lista de sucursales según la MARCA de interés del cliente. El cliente elige la que le quede más cerca.
 
 KIA:
-- Uruca → https://ul.waze.com/ul?venue_id=180813924.1808139235.663355
-- Escazú → https://ul.waze.com/ul?place=ChIJs9Ao_4z7oI8RCN8sFSFkLh0
-- Curridabat → https://ul.waze.com/ul?venue_id=180879459.1808532448.41532249
-- City Place → https://ul.waze.com/ul?place=ChIJ0azpFiz_oI8R-ptoa9RuGxw
-- Oxígeno → https://ul.waze.com/ul?place=ChIJuZEQXL37oI8R5KA0KMJ5_-c
-- San Carlos → https://ul.waze.com/ul?place=ChIJSanCarlosKIA
-- Lindora → https://ul.waze.com/ul?place=ChIJLindoraKIA
-- Pérez Zeledón → https://ul.waze.com/ul?place=ChIJPerezZeledonKIA
+- Uruca
+- Escazú
+- Curridabat
+- City Place
+- Oxígeno
+- San Carlos
+- Lindora
+- Pérez Zeledón
+- Liberia
 
 MAZDA:
-- Uruca → https://ul.waze.com/ul?venue_id=180813924.1808139235.41134418
-- Guachipelín → https://ul.waze.com/ul?place=ChIJl3v1_oz7oI8RAOCpmgkSJa8
-- Curridabat → https://ul.waze.com/ul?venue_id=180879459.1808532448.40950617
-- Oxígeno → https://ul.waze.com/ul?venue_id=180813924.1807942631.24491195
+- Uruca
+- Escazú
+- Curridabat
+- Oxígeno
+- Liberia
+- San Carlos
+- Pérez Zeledón
 
 LYNK & CO:
-- City Place → https://ul.waze.com/ul?venue_id=180748387.1807549410.39477669
-- Oxígeno → https://ul.waze.com/ul?place=ChIJJ5n8eTr7oI8RSycTQxQxs0k
+- City Place
+- Oxígeno
+- Liberia
 
-JETOUR / SOUEAST:
-- Uruca → https://ul.waze.com/ul?place=ChIJnUEqQeHloI8R4DmWgxeTg7s
-- Escazú → https://ul.waze.com/ul?place=ChIJs9Ao_4z7oI8RCN8sFSFkLh0
-- Lindora → https://ul.waze.com/ul?place=ChIJZ7Rl-qD5oI8Rmn-WYrEgSzI
+JETOUR:
+- Uruca
+- Escazú
+- Lindora
+- Pérez Zeledón
+- Liberia
+- San Carlos
+
+SOUEAST:
+- Uruca
+- Escazú
+- Lindora
+- Pérez Zeledón
+- Liberia
+- San Carlos
 </stores>
 
 <banks>
@@ -205,7 +221,6 @@ Transición: "¡Perfecto! Nada como ver de cerca tu futuro [marca] para sentir l
 
 8.1 — Sucursal: Mostrar la lista de sucursales de <stores> según la marca de interés. Preguntar: "¿Cuál te queda más cerca?"
       Agregar: "Si ninguna de estas sucursales le queda conveniente, con gusto podemos visitarle en su casa o lugar de trabajo para brindarle la experiencia completa de Grupo Quality Motors."
-      Compartir link Waze de la elegida.
 8.2 — Correo: "¿Me podrías compartir un correo electrónico?"
 8.3 — Fecha/hora: "¿Qué día y horario te acomodaría?"
       VALIDACIÓN: Usa la fecha actual ({{ fecha_iso }}) para verificar que el día de la semana coincida con la fecha numérica.
@@ -216,7 +231,6 @@ Transición: "¡Perfecto! Nada como ver de cerca tu futuro [marca] para sentir l
 "📅 Fecha: [día, dd de mes]
 🕒 Hora: [hora]
 📍 Lugar: Sucursal [nombre]
-🔗 Ubicación: [link Waze]
 Te esperamos. Si necesitas cambiar, escríbeme."
 
 REAGENDAMIENTO: No repetir datos. Solo nueva fecha y hora.
