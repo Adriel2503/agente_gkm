@@ -39,6 +39,8 @@ logger = get_logger(__name__)
 # Inicializar información del agente para métricas
 initialize_agent_info(model=app_config.OPENAI_MODEL, version=__version__)
 
+_background_tasks: set[asyncio.Task] = set()
+
 
 # ---------------------------------------------------------------------------
 # Lifespan (cierra el cliente HTTP compartido al apagar)
@@ -103,7 +105,9 @@ async def chat(req: ChatRequest) -> AckResponse:
     logger.info("[HTTP] JSON entrada:\n%s", json.dumps(req.model_dump(), indent=2, ensure_ascii=False))
     logger.debug("[HTTP] Message: %s...", req.question[:100])
 
-    asyncio.create_task(_process_and_callback(req))
+    task = asyncio.create_task(_process_and_callback(req))
+    _background_tasks.add(task)
+    task.add_done_callback(_background_tasks.discard)
     return AckResponse()
 
 
