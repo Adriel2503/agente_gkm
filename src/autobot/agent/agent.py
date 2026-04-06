@@ -13,13 +13,14 @@ from .runtime import (
     acquire_agent_lock, release_agent_lock, acquire_session_lock,
     message_window,
 )
-from ..tools.tools import AGENT_TOOLS
+from ..tools.tools import AGENT_TOOLS, get_tools_for_empresa
 from ..logger import get_logger
 from ..metrics import track_chat_response, track_llm_call, record_chat_error, record_token_usage, CHAT_REQUESTS, AGENT_CACHE, update_cache_stats
 from .prompts import build_gqm_system_prompt
 from .content import CitaStructuredResponse, _build_content
 from .context import _prepare_agent_context
 from ..schemas import GQMConfig
+from ..services.chatbot_config import get_chatbot_config
 
 logger = get_logger(__name__)
 
@@ -78,13 +79,18 @@ async def _get_agent(id_empresa: int, config: GQMConfig | None):
             AGENT_CACHE.labels(result="miss").inc()
             logger.debug("[AGENT] Creando agente con LangChain 1.2+ API - id_empresa=%s", cache_key[0])
 
-            # Construir system prompt usando template Jinja2 (async: carga horario y productos en paralelo)
+            # Leer config de BD para determinar tools habilitadas
+            db_config = await get_chatbot_config(id_empresa)
+            tools_config = db_config.get("tools") if db_config else None
+            tools = get_tools_for_empresa(tools_config)
+
+            # Construir system prompt usando template Jinja2 o BD
             system_prompt = await build_gqm_system_prompt(id_empresa=id_empresa, config=config)
 
             # Crear agente con API moderna (response_format: reply + url opcional)
             agent = create_agent(
                 model=get_model(),
-                tools=AGENT_TOOLS,
+                tools=tools,
                 system_prompt=system_prompt,
                 checkpointer=get_checkpointer(),
                 response_format=CitaStructuredResponse,

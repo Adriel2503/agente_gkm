@@ -32,6 +32,7 @@ dependencies = [
     # --- Observabilidad y caché ---
     "prometheus-client==0.24.1",     # Métricas en /metrics (Prometheus/Grafana)
     "cachetools==7.0.3",             # TTLCache para agentes, horarios, búsquedas, contexto
+    "asyncpg==0.30.0",               # PostgreSQL async (conexión a automotriz-api BD)
 ]
 
 [tool.hatch.build.targets.wheel]

@@ -23,6 +23,7 @@ from .logger import setup_logging, get_logger, trace_id
 from .metrics import initialize_agent_info, HTTP_REQUESTS, HTTP_DURATION
 from .infra import close_http_client
 from .tools.tools import AGENT_TOOLS
+from .services.db import init_db, close_db
 from .config import get_health_issues
 from .schemas import ChatRequest, ChatResponse, AckResponse, CallbackRequest
 from .infra.http_client import get_client
@@ -48,12 +49,14 @@ _background_tasks: set[asyncio.Task] = set()
 
 @asynccontextmanager
 async def app_lifespan(app: FastAPI):
+    await init_db()
     await init_checkpointer()
     try:
         yield
     finally:
         await close_checkpointer()
         await close_http_client()
+        await close_db()
 
 
 # ---------------------------------------------------------------------------
@@ -203,6 +206,7 @@ def main():
     logger.info("Timeouts:   LLM=%ss | API=%ss | Chat=%ss", app_config.OPENAI_TIMEOUT, app_config.API_TIMEOUT, app_config.CHAT_TIMEOUT)
     logger.info("Cache:      agente=%smin | búsqueda=%smin | historial=%s msgs", app_config.AGENT_CACHE_TTL_MINUTES, app_config.SEARCH_CACHE_TTL_MINUTES, app_config.MAX_MESSAGES_HISTORY)
     logger.info("Resiliencia: CB threshold=%s fallos | reset=%ss", app_config.CB_THRESHOLD, app_config.CB_RESET_TTL)
+    logger.info("Database:     %s", "PostgreSQL" if app_config.DATABASE_URL else "(no configurada)")
     logger.info("Checkpointer: %s", "Redis (%s)" % app_config.REDIS_URL if app_config.REDIS_URL else "InMemorySaver")
     logger.info("Timezone:   %s", app_config.TIMEZONE)
     logger.info("Log Level:  %s", app_config.LOG_LEVEL)

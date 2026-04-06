@@ -1,6 +1,7 @@
 """Re-exporta la configuración del agente (env, timeouts, URLs, circuit breakers)."""
 
 from .config import (
+    DATABASE_URL,
     OPENAI_API_KEY,
     OPENAI_MODEL,
     OPENAI_TEMPERATURE,
@@ -37,6 +38,7 @@ from .circuit_breakers import (
 )
 
 __all__ = [
+    "DATABASE_URL",
     "OPENAI_API_KEY",
     "OPENAI_MODEL",
     "OPENAI_TEMPERATURE",

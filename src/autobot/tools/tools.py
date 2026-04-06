@@ -56,7 +56,42 @@ async def search_kia_modelos(
         return "Error al buscar modelos KIA. Intenta nuevamente."
 
 
-# Lista de todas las tools disponibles para el agente
-AGENT_TOOLS = [search_kia_modelos]
+# Registro de todas las tools con su key para filtrar por empresa
+TOOL_REGISTRY: dict[str, object] = {
+    "search_kia_modelos": search_kia_modelos,
+}
 
-__all__ = ["search_kia_modelos", "AGENT_TOOLS"]
+# Lista completa (fallback si no hay config en BD)
+AGENT_TOOLS = list(TOOL_REGISTRY.values())
+
+
+def get_tools_for_empresa(tools_config: list | None) -> list:
+    """
+    Filtra las tools según la config de la empresa.
+
+    Args:
+        tools_config: Lista de keys habilitadas, ej: ["search_kia_modelos"]
+                      Si es None o vacía, devuelve todas las tools.
+
+    Returns:
+        Lista de tools habilitadas para esta empresa.
+    """
+    if not tools_config:
+        return AGENT_TOOLS
+
+    tools = []
+    for key in tools_config:
+        if key in TOOL_REGISTRY:
+            tools.append(TOOL_REGISTRY[key])
+        else:
+            logger.warning("[TOOLS] Tool '%s' no encontrada en el registro", key)
+
+    if not tools:
+        logger.warning("[TOOLS] Ninguna tool válida en config, usando todas")
+        return AGENT_TOOLS
+
+    logger.debug("[TOOLS] Tools habilitadas: %s", [t.name for t in tools])
+    return tools
+
+
+__all__ = ["search_kia_modelos", "AGENT_TOOLS", "TOOL_REGISTRY", "get_tools_for_empresa"]
