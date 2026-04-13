@@ -3,6 +3,8 @@ Lógica del agente automotriz usando LangChain 1.2+ API moderna.
 Versión mejorada con logging, métricas, configuración centralizada y memoria automática.
 """
 
+import time
+
 import openai
 
 from langchain.agents import create_agent
@@ -72,7 +74,7 @@ async def _get_agent(
     if cached is not None:
         AGENT_CACHE.labels(result="hit").inc()
         update_cache_stats("agent", agent_cache_size())
-        logger.debug("[AGENT] Cache hit - id_empresa=%s, phone=%s", cache_key[0], cache_key[1])
+        logger.info("[AGENT] Cache hit - id_empresa=%s, phone=%s", cache_key[0], cache_key[1])
         return cached
 
     # Slow path: serializar creación para evitar thundering herd
@@ -84,11 +86,11 @@ async def _get_agent(
             if cached is not None:
                 AGENT_CACHE.labels(result="hit").inc()
                 update_cache_stats("agent", agent_cache_size())
-                logger.debug("[AGENT] Cache hit tras lock - id_empresa=%s, phone=%s", cache_key[0], cache_key[1])
+                logger.info("[AGENT] Cache hit tras lock - id_empresa=%s, phone=%s", cache_key[0], cache_key[1])
                 return cached
 
             AGENT_CACHE.labels(result="miss").inc()
-            logger.debug("[AGENT] Creando agente con LangChain 1.2+ API - id_empresa=%s, phone=%s", cache_key[0], cache_key[1])
+            logger.info("[AGENT] Creando agente con LangChain 1.2+ API - id_empresa=%s, phone=%s", cache_key[0], cache_key[1])
 
             # Construir system prompt usando template Jinja2 (async: carga horario y productos en paralelo)
             system_prompt = await build_gqm_system_prompt(
@@ -112,7 +114,7 @@ async def _get_agent(
 
             cache_agent(cache_key, agent)
             update_cache_stats("agent", agent_cache_size())
-            logger.debug(
+            logger.info(
                 "[AGENT] Agente cacheado - id_empresa=%s, phone=%s, Tools: %s, TTL: %ss",
                 cache_key[0],
                 cache_key[1],
@@ -196,6 +198,7 @@ async def process_message(
         try:
             logger.debug("[AGENT] Invocando agent - Session: %s, Message: %s...", phone, message[:100])
 
+            _llm_start = time.perf_counter()
             with track_chat_response():
                 with track_llm_call():
                     result = await agent.ainvoke(
@@ -207,6 +210,8 @@ async def process_message(
                         config=run_config,
                         context=agent_context
                     )
+            _llm_duration = time.perf_counter() - _llm_start
+            logger.info("[AGENT] LLM call completado - Session: %s, duración=%.2fs", phone, _llm_duration)
 
             structured = result.get("structured_response")
             if isinstance(structured, CitaStructuredResponse):
@@ -220,14 +225,19 @@ async def process_message(
                     reply = structured.reply
                 url = structured.url if (structured.url and structured.url.strip()) else None
             else:
-                logger.warning("[AGENT] Respuesta fuera de formato estructurado - Session: %s", phone)
                 messages = result.get("messages", [])
-                if messages:
-                    last_message = messages[-1]
-                    reply = last_message.content if hasattr(last_message, "content") else str(last_message)
-                    if not reply:
-                        logger.warning("[AGENT] last_message.content vacío - Session: %s", phone)
-                        reply = "El asistente respondió en un formato inesperado, por favor intenta nuevamente."
+                last_message = messages[-1] if messages else None
+                raw_content = ""
+                if last_message is not None:
+                    raw_content = last_message.content if hasattr(last_message, "content") else str(last_message)
+                logger.warning(
+                    "[AGENT] Respuesta fuera de formato estructurado - Session: %s, structured_type=%s, raw_content=%s",
+                    phone,
+                    type(structured).__name__ if structured is not None else "None",
+                    str(raw_content)[:2000],
+                )
+                if messages and raw_content:
+                    reply = raw_content
                 else:
                     reply = "El asistente respondió en un formato inesperado, por favor intenta nuevamente."
                 url = None
@@ -242,8 +252,8 @@ async def process_message(
                     _output_tokens += um.get("output_tokens", 0)
             if _input_tokens or _output_tokens:
                 record_token_usage(_empresa_id, _input_tokens, _output_tokens)
-                logger.debug("[AGENT] Tokens — input=%s, output=%s, total=%s, empresa=%s",
-                             _input_tokens, _output_tokens, _input_tokens + _output_tokens, _empresa_id)
+                logger.info("[AGENT] Tokens — input=%s, output=%s, total=%s, empresa=%s",
+                            _input_tokens, _output_tokens, _input_tokens + _output_tokens, _empresa_id)
 
             logger.debug("[AGENT] Respuesta generada: %s...", (reply[:200], url))
 

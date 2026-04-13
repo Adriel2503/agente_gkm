@@ -25,7 +25,18 @@ logger = get_logger(__name__)
 # renderizada con nombre/marca/modelo/id_bitrix específicos de cada persona.
 # TTL default 60 min. Los cambios de campos del lead (raros) se reflejan
 # en el próximo MISS tras expirar el TTL.
-_agent_cache: TTLCache = TTLCache(
+class _LoggingTTLCache(TTLCache):
+    """TTLCache que loggea cuando se elimina una entrada (TTL expirado o LRU por maxsize)."""
+
+    def __delitem__(self, key, **kwargs):
+        super().__delitem__(key, **kwargs)
+        try:
+            logger.info("[CACHE] Agente desalojado - key=%s, cache_size=%s", key, len(self))
+        except Exception:
+            pass  # nunca dejar que logging rompa operaciones del cache
+
+
+_agent_cache: TTLCache = _LoggingTTLCache(
     maxsize=app_config.AGENT_CACHE_MAXSIZE,
     ttl=app_config.AGENT_CACHE_TTL_MINUTES * 60,
 )
@@ -113,7 +124,7 @@ def _cleanup_stale_agent_locks(current_cache_key: tuple) -> None:
     """
     if len(_agent_cache_locks) <= _LOCKS_CLEANUP_THRESHOLD:
         return
-    removed = 0
+    removed_keys: list = []
     for key in list(_agent_cache_locks.keys()):
         if key == current_cache_key:
             continue
@@ -121,9 +132,12 @@ def _cleanup_stale_agent_locks(current_cache_key: tuple) -> None:
             lock = _agent_cache_locks.get(key)
             if lock is not None and not lock.locked():
                 del _agent_cache_locks[key]
-                removed += 1
-    if removed:
-        logger.debug("[CACHE] Limpieza de locks huérfanos: %s eliminados", removed)
+                removed_keys.append(key)
+    if removed_keys:
+        logger.debug(
+            "[CACHE] Limpieza de locks huérfanos: %s eliminados - keys=%s",
+            len(removed_keys), removed_keys[:10],
+        )
 
 
 def _cleanup_stale_session_locks(current_phone: str) -> None:
@@ -137,16 +151,19 @@ def _cleanup_stale_session_locks(current_phone: str) -> None:
     """
     if len(_session_locks) <= _SESSION_LOCKS_CLEANUP_THRESHOLD:
         return
-    removed = 0
+    removed_phones: list[str] = []
     for sid in list(_session_locks.keys()):
         if sid == current_phone:
             continue
         lock = _session_locks.get(sid)
         if lock is not None and not lock.locked():
             del _session_locks[sid]
-            removed += 1
-    if removed:
-        logger.debug("[CACHE] Limpieza de session locks: %s eliminados", removed)
+            removed_phones.append(sid)
+    if removed_phones:
+        logger.debug(
+            "[CACHE] Limpieza de session locks: %s eliminados - phones=%s",
+            len(removed_phones), removed_phones[:10],
+        )
 
 
 __all__ = [

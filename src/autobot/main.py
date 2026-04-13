@@ -19,7 +19,7 @@ from prometheus_client import make_asgi_app
 
 from . import config as app_config, __version__
 from .agent import process_message, init_checkpointer, close_checkpointer
-from .logger import setup_logging, get_logger, trace_id
+from .logger import setup_logging, get_logger, trace_id, phone_ctx
 from .metrics import initialize_agent_info, HTTP_REQUESTS, HTTP_DURATION
 from .infra import close_http_client
 from .tools.tools import AGENT_TOOLS
@@ -101,6 +101,7 @@ async def chat(req: ChatRequest) -> AckResponse:
     El agente procesa en background y envía el resultado al CALLBACK_URL.
     """
     trace_id.set(uuid.uuid4().hex[:8])
+    phone_ctx.set(req.phone)
     logger.info("[HTTP] Mensaje recibido - Session: %s, Empresa: %s, Length: %s chars", req.phone, req.id_empresa, len(req.question))
     logger.info("[HTTP] JSON entrada:\n%s", json.dumps(req.model_dump(), indent=2, ensure_ascii=False))
     logger.debug("[HTTP] Message: %s...", req.question[:100])
@@ -168,9 +169,14 @@ async def _process_and_callback(req: ChatRequest) -> None:
     logger.info("[CALLBACK] JSON salida:\n%s", json.dumps(callback_data, indent=2, ensure_ascii=False))
     try:
         client = get_client()
+        _cb_start = time.perf_counter()
         response = await client.post(app_config.CALLBACK_URL, json=callback_data)
         response.raise_for_status()
-        logger.info("[CALLBACK] Respuesta enviada - Session: %s, Status: %s", req.phone, response.status_code)
+        _cb_duration = time.perf_counter() - _cb_start
+        logger.info(
+            "[CALLBACK] Respuesta enviada - Session: %s, Status: %s, duración=%.2fs",
+            req.phone, response.status_code, _cb_duration,
+        )
     except Exception as e:
         logger.error("[CALLBACK] Error enviando respuesta - Session: %s | %s", req.phone, e, exc_info=True)
 

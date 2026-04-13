@@ -43,7 +43,7 @@ async def buscar_modelos_kia(
     cached = _search_cache.get(cache_key)
     if cached is not None:
         SEARCH_CACHE.labels(result="hit").inc()
-        logger.debug("[buscar_kia] Cache hit para: %s", query)
+        logger.info("[buscar_kia] Cache hit para: %s", query)
         return cached
 
     try:
@@ -66,7 +66,7 @@ async def buscar_modelos_kia(
         SEARCH_CACHE.labels(result="miss").inc()
         result = {"success": True, "resultados": response["resultados"], "error": None}
         _search_cache[cache_key] = result
-        logger.debug("[buscar_kia] %d resultado(s) para: %s", len(result["resultados"]), query)
+        logger.info("[buscar_kia] %d resultado(s) para: %s", len(result["resultados"]), query)
         return result
 
     except RuntimeError:

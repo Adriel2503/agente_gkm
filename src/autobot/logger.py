@@ -9,16 +9,18 @@ from contextvars import ContextVar
 from logging.handlers import RotatingFileHandler
 from pathlib import Path
 
-# Trace ID por request — se setea en main.py al recibir cada request.
+# Trace ID y phone por request — se setean en main.py al recibir cada request.
 # ContextVar propaga automáticamente a todas las coroutines hijas.
 trace_id: ContextVar[str] = ContextVar("trace_id", default="-")
+phone_ctx: ContextVar[str] = ContextVar("phone_ctx", default="-")
 
 
 class _TraceFilter(logging.Filter):
-    """Inyecta trace_id en cada log record para correlacionar logs por request."""
+    """Inyecta trace_id y phone en cada log record para correlacionar logs por request/lead."""
 
     def filter(self, record):
         record.trace_id = trace_id.get()
+        record.phone = phone_ctx.get()
         return True
 
 
@@ -36,7 +38,7 @@ def setup_logging(
         log_format: Formato personalizado de log (opcional)
     """
     if log_format is None:
-        log_format = '%(asctime)s - %(name)s - %(levelname)s - [%(filename)s:%(lineno)d] - [trace=%(trace_id)s] - %(message)s'
+        log_format = '%(asctime)s - %(name)s - %(levelname)s - [%(filename)s:%(lineno)d] - [trace=%(trace_id)s] [phone=%(phone)s] - %(message)s'
     
     handlers = [logging.StreamHandler(sys.stdout)]
     
@@ -88,4 +90,4 @@ def get_logger(name: str) -> logging.Logger:
     return logging.getLogger(name)
 
 
-__all__ = ["setup_logging", "get_logger", "trace_id"]
+__all__ = ["setup_logging", "get_logger", "trace_id", "phone_ctx"]

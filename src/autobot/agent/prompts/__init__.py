@@ -68,7 +68,7 @@ async def build_gqm_system_prompt(
     dia_nombre = _DIAS_ESPANOL[now.weekday()]
     mes_nombre = _MESES_ESPANOL[now.month - 1]
     variables["fecha_completa"] = f"{now.day} de {mes_nombre} de {now.year} es {dia_nombre}"
-    logger.info(
+    logger.debug(
         "[AGENT] Fecha usada en prompt - Hoy: %s, Hora: %s, Para API: %s",
         variables["fecha_completa"],
         variables["hora_actual"],

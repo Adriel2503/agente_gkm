@@ -150,7 +150,89 @@ Pasos para migrar de la estructura actual (plana) a tenants:
 
 ## Consideraciones
 
-- **Cache de agentes**: hoy se cachea por `(id_empresa,)`. Con tenants sigue igual, cada empresa tiene su agente cacheado con sus tools y prompt.
+- **Cache de agentes**: hoy se cachea por `(id_empresa, phone)`. Con tenants sigue igual, pero el agente se segmenta por lead porque el prompt incluye `<lead_identity>` con datos específicos de cada persona. Ver sección "Decisión de cache key" más abajo.
 - **Circuit breakers**: cada tenant puede definir sus propios CBs en su `config.py`. El registry de CBs global sigue funcionando para /health.
 - **GQMConfig**: se renombrara a algo generico (TenantConfig o AgentConfig) cuando se implemente. Los campos dinamicos vienen en el JSON del request.
 - **Testing**: cada tenant se testea independientemente. Se puede testear un tenant sin levantar los demas.
+
+## Decisión de cache key: Opciones evaluadas
+
+### Contexto del problema
+
+El orquestador envía 4 campos de identidad del lead por request (`nombre`, `marca`, `modelo`, `id_bitrix`), que se renderizan en el system prompt dentro de `<lead_identity>`. Esto significa que **el prompt varía por persona**, no solo por empresa.
+
+La cache key original `(id_empresa,)` causaba un bug: el primer lead que escribía a una empresa generaba el agente con SU prompt, y los siguientes leads de la misma empresa durante los próximos 60 min (TTL) recibían ese prompt ajeno.
+
+Solución evidente: incluir `phone` en la cache key. Pero quedaba una duda: ¿qué pasa si los campos del lead cambian durante la vida del cache? Se evaluaron 3 opciones.
+
+### Opción A — Comparación de campos
+
+**Idea:** cache key `(id_empresa, phone)` + guardar los 4 campos junto al agente en una `CachedAgent` NamedTuple. En cada HIT, comparar los campos del request con los cacheados; si alguno cambió, invalidar manualmente y recrear.
+
+```python
+class CachedAgent(NamedTuple):
+    agent: Any
+    nombre: str | None
+    marca: str | None
+    modelo: str | None
+    id_bitrix: str | None
+
+# En _get_agent():
+cached = get_cached_agent(cache_key)
+if cached is not None:
+    if (cached.nombre == nombre and cached.marca == marca
+        and cached.modelo == modelo and cached.id_bitrix == id_bitrix):
+        return cached.agent      # HIT exacto
+    else:
+        invalidate_agent(cache_key)   # STALE, pop manual
+        # cae al flujo de creación
+```
+
+**Pros:** invalidación inmediata al detectar cambio, siempre 1 entrada por persona, debuggeable (se ven los campos en el cache).
+**Contras:** código extra (NamedTuple + función `invalidate_agent` + comparaciones).
+
+### Opción B — Hash en la cache key
+
+**Idea:** meter el hash de los 4 campos dentro de la propia key. Si cambia cualquier campo → key distinta → miss automático, sin lógica de invalidación.
+
+```python
+cache_key = (id_empresa, phone, hash((nombre, marca, modelo, id_bitrix)))
+cache[cache_key] = agent
+```
+
+**Pros:** código compacto, sin invalidación explícita (el TTLCache expira solo las entradas viejas).
+**Contras:**
+- Las entradas viejas quedan huérfanas hasta que expire su TTL → hasta 2-3 entradas por persona temporalmente.
+- Inspección opaca: al mirar el cache solo se ven hashes, no los datos del lead reales.
+- La "ventaja" de la invalidación automática es marginal porque los campos casi nunca cambian.
+
+### Opción C — Minimalista (la implementada)
+
+**Idea:** cache key simple `(id_empresa, phone)`, sin validar campos en absoluto. Si los datos del lead cambian, el prompt queda desactualizado hasta máximo 60 min (TTL) o hasta que el cliente lo mencione en el chat (y el historial del checkpointer lo captura).
+
+```python
+cache_key: tuple = (id_empresa, phone)
+cached = get_cached_agent(cache_key)
+if cached is not None:
+    return cached
+# MISS: build + cache
+```
+
+**Pros:**
+- Mínimo cambio de código (solo agregar `phone` a la key y al parámetro de `_get_agent()`).
+- YAGNI: no se agrega complejidad por un edge case.
+- 1 entrada por persona en el cache, sin huérfanas.
+
+**Contras aceptados:**
+- Si el orquestador cambia silenciosamente los datos del lead (sin que el cliente lo mencione), el prompt viejo vive hasta 60 min.
+
+**Por qué se eligió C:** los 4 campos del lead cambian en escalas de **días**, no de minutos. En un TTL de 60 min, la probabilidad de que un campo cambie es casi nula, y si pasa, el modelo igual puede pescar el cambio del historial de conversación (el checkpointer sigue vivo en `thread_id = phone`). El costo de implementar A o B no se justifica para ese caso.
+
+### Escalada futura
+
+Si en producción se observa que los campos del lead cambian con frecuencia y causa problemas reales, migrar a **Opción A** es ~15 minutos de trabajo:
+1. Crear `CachedAgent` NamedTuple en `runtime/_cache.py`.
+2. Agregar función `invalidate_agent(cache_key)`.
+3. En `_get_agent()`, envolver el retorno en `CachedAgent` y agregar bloque de comparación.
+
+La Opción B no se considera para escalada porque sus ventajas son marginales y la inspección opaca complica debugging.
