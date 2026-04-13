@@ -187,7 +187,7 @@ async def process_message(
             record_chat_error("agent_creation_error")
             return ("Disculpa, tuve un problema de configuración. ¿Podrías intentar nuevamente?", None)
 
-        agent_context = _prepare_agent_context(id_empresa, config, phone)
+        agent_context = _prepare_agent_context(id_empresa, config, phone, id_bitrix)
 
         # LangGraph checkpointer usa thread_id como str
         run_config = {

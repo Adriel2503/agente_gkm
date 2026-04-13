@@ -19,9 +19,15 @@ class AgentContext:
     """
     id_empresa: int
     phone: str = ""
+    id_bitrix: str | None = None
 
 
-def _prepare_agent_context(id_empresa: int, config: GQMConfig | None, phone: str) -> AgentContext:
+def _prepare_agent_context(
+    id_empresa: int,
+    config: GQMConfig | None,
+    phone: str,
+    id_bitrix: str | None = None,
+) -> AgentContext:
     """
     Prepara el contexto runtime para inyectar a las tools del agente.
 
@@ -32,6 +38,7 @@ def _prepare_agent_context(id_empresa: int, config: GQMConfig | None, phone: str
         id_empresa: ID de la empresa (tenant key).
         config: GQMConfig opcional validado por Pydantic.
         phone: Teléfono del cliente (str, identificador de sesión WhatsApp).
+        id_bitrix: ID del lead en Bitrix/Vitrix (para tools de escritura en CRM).
 
     Returns:
         AgentContext configurado.
@@ -39,6 +46,7 @@ def _prepare_agent_context(id_empresa: int, config: GQMConfig | None, phone: str
     params: dict[str, Any] = {
         "id_empresa": id_empresa,
         "phone": phone,
+        "id_bitrix": id_bitrix,
     }
 
     if config:
