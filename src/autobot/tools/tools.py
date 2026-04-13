@@ -63,17 +63,17 @@ async def agendar_cita(
     runtime: ToolRuntime = None,
 ) -> str:
     """
-    Registra la confirmación de cita del lead en el CRM para que el equipo
-    humano la procese. Llamar SOLO cuando el usuario haya confirmado
-    explícitamente todos los datos de la cita.
+    Registra la cita agendada del lead en el CRM con el historial del
+    perfilamiento, para que el asesor humano la procese.
 
     Args:
-        description: Resumen de la cita en texto libre (modelo, sucursal,
-            fecha/hora elegida por el cliente, nombre del cliente y
-            cualquier observación relevante).
+        description: Bloque Q&A del perfilamiento (8 preguntas canónicas
+            del flujo) en formato "P: ...\\nR: ..." por línea. Ver
+            <tools> del system prompt para el formato completo y reglas
+            de uso.
 
     Returns:
-        Mensaje corto indicando si quedó registrada o no.
+        Mensaje corto indicando si la cita quedó registrada o no.
     """
     logger.info("[agendar_cita] Tool en uso: agendar_cita")
 
