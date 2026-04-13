@@ -28,6 +28,8 @@ from .config import (
     REDIS_URL,
     REDIS_CHECKPOINT_TTL_HOURS,
     API_KIA_RAG_URL,
+    APIKEY_VITRIX,
+    VITRIX_API_URL,
     CALLBACK_URL,
     TIMEZONE,
 )
@@ -66,6 +68,8 @@ __all__ = [
     "REDIS_URL",
     "REDIS_CHECKPOINT_TTL_HOURS",
     "CALLBACK_URL",
+    "APIKEY_VITRIX",
+    "VITRIX_API_URL",
     "kia_rag_cb",
     "get_health_issues",
 ]

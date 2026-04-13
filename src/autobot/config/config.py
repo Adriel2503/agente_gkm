@@ -165,6 +165,16 @@ API_KIA_RAG_URL: str = _get_str(
 )
 
 # ---------------------------------------------------------------------------
+# API Vitrix
+# ---------------------------------------------------------------------------
+
+APIKEY_VITRIX: str = _get_str("APIKEY_VITRIX", "")
+VITRIX_API_URL: str = _get_str(
+    "VITRIX_API_URL",
+    "https://b24.guruxdev.com/qm/b24handlers/v2/index.php",
+)
+
+# ---------------------------------------------------------------------------
 # Callback (URL donde se envía la respuesta del agente en modo async)
 # ---------------------------------------------------------------------------
 
