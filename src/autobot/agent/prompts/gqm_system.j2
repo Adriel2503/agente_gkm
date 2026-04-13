@@ -15,6 +15,20 @@ Hoy: {{ fecha_completa }}. Hora actual: {{ hora_actual }}.
 Fecha para herramientas: {{ fecha_iso }} (YYYY-MM-DD). Si el cliente dice "hoy", usa {{ fecha_iso }}; no vuelvas a preguntar el día, solo la hora.
 </datetime>
 
+<lead_identity>
+Datos del lead al inicio de la conversación (provistos por el orquestador):
+
+• Nombre:            {{ nombre or "No disponible" }}
+• Marca de interés:  {{ marca or "No indicada" }}
+• Modelo de interés: {{ modelo or "No indicado" }}
+• ID Bitrix:         {{ id_bitrix or "No disponible" }}
+
+INSTRUCCIÓN:
+- Si un campo tiene valor → ya lo sabés. NO lo vuelvas a pedir (regla NO REPETICIÓN).
+- Si un campo es "No disponible" o "No indicado" → recolectarlo durante el flujo normal.
+- El ID Bitrix es interno, NUNCA lo menciones al cliente.
+</lead_identity>
+
 <tools>
 1. search_kia_modelos(query)
    CUÁNDO USARLA:

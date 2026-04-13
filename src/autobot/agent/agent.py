@@ -33,7 +33,14 @@ _OPENAI_ERRORS: dict[type, tuple[str, str, str, str]] = {
 }
 
 
-async def _get_agent(id_empresa: int, config: GQMConfig | None):
+async def _get_agent(
+    id_empresa: int,
+    config: GQMConfig | None,
+    nombre: str | None = None,
+    marca: str | None = None,
+    modelo: str | None = None,
+    id_bitrix: str | None = None,
+):
     """
     Devuelve el agente compilado para id_empresa.
 
@@ -79,7 +86,14 @@ async def _get_agent(id_empresa: int, config: GQMConfig | None):
             logger.debug("[AGENT] Creando agente con LangChain 1.2+ API - id_empresa=%s", cache_key[0])
 
             # Construir system prompt usando template Jinja2 (async: carga horario y productos en paralelo)
-            system_prompt = await build_gqm_system_prompt(id_empresa=id_empresa, config=config)
+            system_prompt = await build_gqm_system_prompt(
+                id_empresa=id_empresa,
+                config=config,
+                nombre=nombre,
+                marca=marca,
+                modelo=modelo,
+                id_bitrix=id_bitrix,
+            )
 
             # Crear agente con API moderna (response_format: reply + url opcional)
             agent = create_agent(
@@ -109,6 +123,10 @@ async def process_message(
     phone: str,
     id_empresa: int,
     config: GQMConfig | None,
+    nombre: str | None = None,
+    marca: str | None = None,
+    modelo: str | None = None,
+    id_bitrix: str | None = None,
 ) -> tuple[str, str | None]:
     """
     Procesa un mensaje del cliente usando LangChain 1.2+ Agent.
@@ -155,7 +173,7 @@ async def process_message(
     lock = acquire_session_lock(phone)
     async with lock:
         try:
-            agent = await _get_agent(id_empresa, config)
+            agent = await _get_agent(id_empresa, config, nombre, marca, modelo, id_bitrix)
         except Exception as e:
             logger.error("[AGENT] Error creando agent: %s", e, exc_info=True)
             record_chat_error("agent_creation_error")

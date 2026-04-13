@@ -123,6 +123,10 @@ async def _process_and_callback(req: ChatRequest) -> None:
                 phone=req.phone,
                 id_empresa=req.id_empresa,
                 config=req.config,
+                nombre=req.nombre,
+                marca=req.marca,
+                modelo=req.modelo,
+                id_bitrix=req.id_bitrix,
             ),
             timeout=app_config.CHAT_TIMEOUT,
         )

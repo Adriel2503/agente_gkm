@@ -53,6 +53,11 @@ class ChatRequest(BaseModel):
     id_empresa: int
     id_chat: int
     phone_number_id: str
+    # --- Identidad del lead (provistos por el orquestador) ---
+    id_bitrix: str | None = None
+    nombre: str | None = None
+    marca: str | None = None
+    modelo: str | None = None
     # --- agregar campos universales aquí ---
     config: GQMConfig | None = None
 
