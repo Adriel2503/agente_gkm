@@ -35,6 +35,7 @@ _OPENAI_ERRORS: dict[type, tuple[str, str, str, str]] = {
 
 async def _get_agent(
     id_empresa: int,
+    phone: str,
     config: GQMConfig | None,
     nombre: str | None = None,
     marca: str | None = None,
@@ -42,32 +43,36 @@ async def _get_agent(
     id_bitrix: str | None = None,
 ):
     """
-    Devuelve el agente compilado para id_empresa.
+    Devuelve el agente compilado para (id_empresa, phone).
 
-    Utiliza TTLCache para evitar recrear el cliente OpenAI, las HTTP calls
-    del prompt y la compilación del grafo LangGraph en cada mensaje. El TTL
-    se gobierna con AGENT_CACHE_TTL_MINUTES (default 60 min), independiente
-    del horario de reuniones (sin cache propio).
+    El system prompt incluye <lead_identity> renderizada con los datos del
+    lead específico (nombre/marca/modelo/id_bitrix), por lo que el cache se
+    segmenta por persona y no solo por empresa; así evitamos que el primer
+    lead de una empresa contamine el prompt de los siguientes.
+
+    TTL gobernado por AGENT_CACHE_TTL_MINUTES (default 60 min). Cambios en
+    los campos del lead se reflejan en el próximo MISS tras expirar el TTL.
 
     Incluye doble verificación con asyncio.Lock por cache_key para serializar
-    la primera creación cuando múltiples sesiones de la misma empresa llegan
-    concurrentemente (thundering herd).
+    la primera creación cuando llegan requests concurrentes para la misma
+    clave (thundering herd).
 
     Args:
         id_empresa: ID de la empresa (tenant key).
+        phone: Teléfono del lead (parte de la cache key).
         config: GQMConfig opcional con configuración del agente.
 
     Returns:
         Agente configurado con tools y checkpointer
     """
-    cache_key: tuple = (id_empresa,)
+    cache_key: tuple = (id_empresa, phone)
 
     # Fast path: cache hit (sin await, atómico en asyncio single-thread)
     cached = get_cached_agent(cache_key)
     if cached is not None:
         AGENT_CACHE.labels(result="hit").inc()
         update_cache_stats("agent", agent_cache_size())
-        logger.debug("[AGENT] Cache hit - id_empresa=%s", cache_key[0])
+        logger.debug("[AGENT] Cache hit - id_empresa=%s, phone=%s", cache_key[0], cache_key[1])
         return cached
 
     # Slow path: serializar creación para evitar thundering herd
@@ -79,11 +84,11 @@ async def _get_agent(
             if cached is not None:
                 AGENT_CACHE.labels(result="hit").inc()
                 update_cache_stats("agent", agent_cache_size())
-                logger.debug("[AGENT] Cache hit tras lock - id_empresa=%s", cache_key[0])
+                logger.debug("[AGENT] Cache hit tras lock - id_empresa=%s, phone=%s", cache_key[0], cache_key[1])
                 return cached
 
             AGENT_CACHE.labels(result="miss").inc()
-            logger.debug("[AGENT] Creando agente con LangChain 1.2+ API - id_empresa=%s", cache_key[0])
+            logger.debug("[AGENT] Creando agente con LangChain 1.2+ API - id_empresa=%s, phone=%s", cache_key[0], cache_key[1])
 
             # Construir system prompt usando template Jinja2 (async: carga horario y productos en paralelo)
             system_prompt = await build_gqm_system_prompt(
@@ -108,8 +113,9 @@ async def _get_agent(
             cache_agent(cache_key, agent)
             update_cache_stats("agent", agent_cache_size())
             logger.debug(
-                "[AGENT] Agente cacheado - id_empresa=%s, Tools: %s, TTL: %ss",
+                "[AGENT] Agente cacheado - id_empresa=%s, phone=%s, Tools: %s, TTL: %ss",
                 cache_key[0],
+                cache_key[1],
                 len(AGENT_TOOLS),
                 agent_cache_ttl(),
             )
@@ -173,7 +179,7 @@ async def process_message(
     lock = acquire_session_lock(phone)
     async with lock:
         try:
-            agent = await _get_agent(id_empresa, config, nombre, marca, modelo, id_bitrix)
+            agent = await _get_agent(id_empresa, phone, config, nombre, marca, modelo, id_bitrix)
         except Exception as e:
             logger.error("[AGENT] Error creando agent: %s", e, exc_info=True)
             record_chat_error("agent_creation_error")

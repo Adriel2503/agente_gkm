@@ -20,9 +20,11 @@ from ...logger import get_logger
 
 logger = get_logger(__name__)
 
-# Cache de agentes compilados: clave = (id_empresa,).
-# TTL independiente del cache de horarios: el system prompt (contexto negocio, FAQs,
-# productos) cambia raramente → TTL largo (default 60 min).
+# Cache de agentes compilados: clave = (id_empresa, phone).
+# Un agente por lead, porque el system prompt incluye <lead_identity>
+# renderizada con nombre/marca/modelo/id_bitrix específicos de cada persona.
+# TTL default 60 min. Los cambios de campos del lead (raros) se reflejan
+# en el próximo MISS tras expirar el TTL.
 _agent_cache: TTLCache = TTLCache(
     maxsize=app_config.AGENT_CACHE_MAXSIZE,
     ttl=app_config.AGENT_CACHE_TTL_MINUTES * 60,
