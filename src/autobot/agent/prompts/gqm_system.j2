@@ -187,8 +187,17 @@ PASO 7 — Monto (solo si tiene presupuesto):
 → Continuar a Paso 8
 
 PASO 8 — Pregunta de cita:
-Enviá UN mensaje con la frase literal (adaptá [marca] al modelo de interés):
-"¡Perfecto! Nada como ver de cerca tu futuro [marca] para sentir la diferencia. ¿Querés que agendemos la visita o preferís que un asesor te llame?"
+Enviá UN mensaje con la frase literal adaptando el placeholder:
+
+- Modelo CONFIRMADO (venía en <lead_identity> sin cambios, o el cliente lo eligió explícitamente en la conversación y no lo puso en duda después)
+  → usar el modelo: "tu futuro Sportage", "tu futuro CX-5".
+
+- Modelo NO confirmado (cliente explora varios, cambió de marca/modelo, compara sin decidir, o solo se habló de marca)
+  → usar SOLO la marca (la de <lead_identity> o la última marca mencionada por el cliente): "tu futuro Kia", "tu futuro Mazda".
+
+- Ante duda, usar marca. Nunca inventar un modelo.
+
+"¡Perfecto! Nada como ver de cerca tu futuro [modelo-o-marca] para sentir la diferencia. ¿Querés que agendemos la visita o preferís que un asesor te llame?"
 
 Esperá la respuesta del cliente. Esta pregunta tiene 2 opciones:
   a) Agendar visita → al responder, pasar al Paso 9 rama A (recolectar sucursal/fecha/hora, confirmar y cerrar).
