@@ -6,7 +6,7 @@ NO están expuestas directamente al orquestador.
 
 from langchain.tools import tool, ToolRuntime
 
-from ..services.busqueda_kia import buscar_modelos_kia, format_kia_resultados
+from ..services.busqueda_kia import buscar_vehiculo_rag, format_kia_resultados
 from ..services.citas_vitrix import crear_task_confirmar_cita
 from ..logger import get_logger
 from ..metrics import track_tool_execution, record_tool_validation_error
@@ -15,7 +15,7 @@ logger = get_logger(__name__)
 
 
 @tool
-async def search_kia_modelos(
+async def buscar_vehiculo(
     query: str,
     runtime: ToolRuntime = None
 ) -> str:
@@ -31,29 +31,32 @@ async def search_kia_modelos(
     Returns:
         Información de hasta 3 modelos KIA relevantes
     """
-    logger.info("[search_kia_modelos] Tool en uso: search_kia_modelos, query=%s", query)
+    logger.info("[buscar_vehiculo] Tool en uso: buscar_vehiculo, query=%s", query)
 
     if not query or not query.strip():
-        record_tool_validation_error("search_kia_modelos")
+        record_tool_validation_error("buscar_vehiculo")
         return "Necesito un término de búsqueda para buscar modelos KIA."
 
     try:
-        with track_tool_execution("search_kia_modelos"):
-            result = await buscar_modelos_kia(query=query, log_apis=True)
+        with track_tool_execution("buscar_vehiculo"):
+            result = await buscar_vehiculo_rag(query=query, log_apis=True)
 
         if not result["success"]:
-            logger.warning("[TOOL] search_kia_modelos - Error: %s", result.get("error"))
+            logger.warning("[TOOL] buscar_vehiculo - Error: %s", result.get("error"))
             return "No pude buscar los modelos en este momento. Intenta nuevamente."
 
         resultados = result.get("resultados", [])
         if not resultados:
-            return f"No encontré modelos KIA que coincidan con '{query}'. Prueba con otros términos."
+            mensaje = result.get("mensaje")
+            if isinstance(mensaje, str) and mensaje.strip():
+                return mensaje.strip()
+            return "No encontré vehículos en esa búsqueda. Intentá con otro modelo o marca para ayudarte mejor."
 
-        logger.debug("[TOOL] search_kia_modelos - %d resultado(s)", len(resultados))
+        logger.debug("[TOOL] buscar_vehiculo - %d resultado(s)", len(resultados))
         return format_kia_resultados(resultados)
 
     except Exception as e:
-        logger.error("[TOOL] search_kia_modelos - Error: %s", e, exc_info=True)
+        logger.error("[TOOL] buscar_vehiculo - Error: %s", e, exc_info=True)
         return "Error al buscar modelos KIA. Intenta nuevamente."
 
 
@@ -100,6 +103,6 @@ async def agendar_cita(
 
 
 # Lista de todas las tools disponibles para el agente
-AGENT_TOOLS = [search_kia_modelos, agendar_cita]
+AGENT_TOOLS = [buscar_vehiculo, agendar_cita]
 
-__all__ = ["search_kia_modelos", "agendar_cita", "AGENT_TOOLS"]
+__all__ = ["buscar_vehiculo", "agendar_cita", "AGENT_TOOLS"]

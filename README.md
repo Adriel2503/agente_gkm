@@ -125,7 +125,7 @@ WhatsApp -> N8N -> Orquestador -> POST /api/chat (puerto 8002)
                    [TTLCache]      [session lock]
                          |               |
                          v               v
-                    LLM gpt-4o-mini + search_kia_modelos
+                    LLM gpt-4o-mini + buscar_vehiculo
                          |               |
                          |          busqueda_kia.py
                          |               |
@@ -148,12 +148,12 @@ WhatsApp -> N8N -> Orquestador -> POST /api/chat (puerto 8002)
 
 ## Tools del agente
 
-### search_kia_modelos
+### buscar_vehiculo
 
 Unica tool activa. Busca modelos KIA por similitud semantica via RAG API.
 
 ```python
-AGENT_TOOLS = [search_kia_modelos]
+AGENT_TOOLS = [buscar_vehiculo]
 ```
 
 | Parametro | Tipo | Descripcion |
@@ -391,7 +391,7 @@ src/autobot/
       middleware.py        # message_window (trim historial)
 
   tools/
-    tools.py               # AGENT_TOOLS = [search_kia_modelos]
+    tools.py               # AGENT_TOOLS = [buscar_vehiculo]
 
   services/
     busqueda_kia.py        # RAG API con resilient_call

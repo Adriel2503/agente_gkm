@@ -1,10 +1,8 @@
-"""
-Servicios del agente: busqueda_kia.
-"""
+"""Servicios del agente."""
 
-from .busqueda_kia import buscar_modelos_kia, format_kia_resultados
+from .busqueda_kia import buscar_vehiculo_rag, format_kia_resultados
 
 __all__ = [
-    "buscar_modelos_kia",
+    "buscar_vehiculo_rag",
     "format_kia_resultados",
 ]

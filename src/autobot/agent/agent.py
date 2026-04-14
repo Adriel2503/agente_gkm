@@ -140,7 +140,7 @@ async def process_message(
     Procesa un mensaje del cliente usando LangChain 1.2+ Agent.
 
     El agente tiene acceso a tools internas:
-    - search_kia_modelos: Busca modelos KIA por similitud semántica
+    - buscar_vehiculo: Busca modelos KIA por similitud semántica
 
     La memoria es automática gracias al checkpointer (InMemorySaver).
 
