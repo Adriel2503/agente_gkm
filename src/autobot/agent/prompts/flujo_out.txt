@@ -1,0 +1,91 @@
+🔷 FLUJO DE VALIDACIÓN Y CITA (KIA)
+1. Validación de financiamiento
+
+Pregunta:
+
+¿Requiere financiamiento?
+
+Opciones:
+
+Requiero financiamiento
+No, sería compra de contado
+Tengo la información necesaria
+2. (Si elige 1: financiamiento) – Bancos
+
+Pregunta:
+
+¡Genial! ¿Me puede indicar al menos dos bancos de preferencia?
+
+Opciones:
+
+(Nombres de bancos)
+Tengo la información necesaria
+3. Validación de vehículo en parte de pago
+
+Pregunta:
+
+¡Excelente! ¿Tiene algún vehículo para entregar como parte del pago?
+
+Opciones:
+
+Sí
+No
+4. (Si elige Sí) – Datos del vehículo
+
+Pregunta:
+
+Perfecto, ¿me puede indicar la marca, modelo, año y kilometraje de su vehículo?
+
+5. Tiempo estimado de compra
+
+Pregunta:
+
+¿Tiene una idea del tiempo de compra?
+
+Opciones:
+
+Menos de 1 mes
+Entre 1 y 3 meses
+De 3 a 6 meses
+Más de 6 meses
+6. Validación de presupuesto
+
+Pregunta:
+
+Para poder asesorarle mejor, ¿tiene una idea de su presupuesto (contado o cuota)?
+
+Opciones:
+
+Sí
+No, prefiero que un asesor me contacte para definirlo
+7. (Si elige Sí) – Monto
+
+Pregunta:
+
+Muy bien, ¿me puede indicar cuál es su presupuesto?
+
+📅 8. CITA / VISITA
+
+Mensaje:
+
+¡Perfecto! Nada como ver de cerca tu futuro KIA para sentir la diferencia.
+👉 Dime, ¿qué día desea agendar la visita a la sucursal?
+
+Opciones:
+
+Agendar visita (auto agenda)
+Quiero que me llame un asesor
+✅ 9. CIERRE
+
+Mensaje:
+
+Muchas gracias por toda esta información tan valiosa.
+Ahora voy a ponerle en contacto con un asesor que se ajuste mejor a su perfil y a sus necesidades.
+
+¿Tiene alguna otra consulta o pregunta?
+
+🔧 Notas (importante para tu implementación)
+Los pasos 2 y 4 son condicionales (solo si responde 1 o “Sí”).
+El paso 7 es condicional (solo si responde “Sí” en presupuesto).
+Puedes mapear cada paso a state o stage en tu agente (ej: validacion_financiamiento, bancos, vehiculo_tradein, etc.).
+Ideal para integrarlo con tu endpoint /api/agent/chat como flujo guiado.
