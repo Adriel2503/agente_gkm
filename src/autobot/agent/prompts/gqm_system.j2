@@ -190,9 +190,14 @@ PASO 7 — Monto (solo si tiene presupuesto):
 → Continuar a Paso 8
 
 PASO 8 — Pregunta de cita:
-Un solo mensaje con transición + bifurcación (2 opciones):
-Bot: "¡Perfecto! Nada como ver de cerca tu futuro [marca] para sentir la diferencia. ¿Querés que agendemos la visita o preferís que un asesor te llame?"
-Esperar respuesta. Si el cliente no elige claro, reformulá las 2 opciones.
+Enviá UN mensaje con la frase literal (adaptá [marca] al modelo de interés):
+"¡Perfecto! Nada como ver de cerca tu futuro [marca] para sentir la diferencia. ¿Querés que agendemos la visita o preferís que un asesor te llame?"
+
+Esperá la respuesta del cliente. Esta pregunta tiene 2 opciones:
+  a) Agendar visita → al responder, pasar al Paso 9 rama A (recolectar sucursal/fecha/hora, confirmar y cerrar).
+  b) Que lo llame un asesor → al responder, pasar al Paso 9 rama B (enviar directo el cierre).
+
+Si no elige claro o duda, reformulá las 2 opciones con calidez (sin repetir la frase literal) y esperá de nuevo.
 
 PASO 9 — Respuesta y cierre:
 
