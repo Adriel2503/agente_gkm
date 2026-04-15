@@ -48,6 +48,7 @@ Recibe un mensaje y responde `200 OK` inmediatamente. El agente procesa en backg
   "id_empresa": 11,
   "id_chat": 100,
   "phone_number_id": "1234567890",
+  "version": "GT-Line",
   "config": {}
 }
 ```
@@ -59,6 +60,7 @@ Recibe un mensaje y responde `200 OK` inmediatamente. El agente procesa en backg
 | `id_empresa` | int | Si | ID del tenant |
 | `id_chat` | int | Si | ID de la conversacion |
 | `phone_number_id` | string | Si | ID del numero WhatsApp |
+| `version` | string | No | Version de interes del lead, si aplica |
 | `config` | object | No | Configuracion del agente (GQMConfig) |
 
 **Response inmediata:**

@@ -42,6 +42,7 @@ async def _get_agent(
     nombre: str | None = None,
     marca: str | None = None,
     modelo: str | None = None,
+    version: str | None = None,
     id_bitrix: str | None = None,
     sucursal: str | None = None,
     correo: str | None = None,
@@ -50,7 +51,7 @@ async def _get_agent(
     Devuelve el agente compilado para (id_empresa, phone).
 
     El system prompt incluye <lead_identity> renderizada con los datos del
-    lead específico (nombre/marca/modelo/sucursal/correo/id_bitrix), por lo que el cache se
+    lead específico (nombre/marca/modelo/version/sucursal/correo/id_bitrix), por lo que el cache se
     segmenta por persona y no solo por empresa; así evitamos que el primer
     lead de una empresa contamine el prompt de los siguientes.
 
@@ -101,6 +102,7 @@ async def _get_agent(
                 nombre=nombre,
                 marca=marca,
                 modelo=modelo,
+                version=version,
                 id_bitrix=id_bitrix,
                 sucursal=sucursal,
                 correo=correo,
@@ -138,6 +140,7 @@ async def process_message(
     nombre: str | None = None,
     marca: str | None = None,
     modelo: str | None = None,
+    version: str | None = None,
     id_bitrix: str | None = None,
     sucursal: str | None = None,
     correo: str | None = None,
@@ -194,6 +197,7 @@ async def process_message(
                 nombre,
                 marca,
                 modelo,
+                version,
                 id_bitrix,
                 sucursal,
                 correo,

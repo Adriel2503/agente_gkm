@@ -42,6 +42,7 @@ async def build_gqm_system_prompt(
     nombre: str | None = None,
     marca: str | None = None,
     modelo: str | None = None,
+    version: str | None = None,
     id_bitrix: str | None = None,
     sucursal: str | None = None,
     correo: str | None = None,
@@ -61,6 +62,7 @@ async def build_gqm_system_prompt(
     variables["nombre"] = nombre
     variables["marca"] = marca
     variables["modelo"] = modelo
+    variables["version"] = version
     variables["id_bitrix"] = id_bitrix
     variables["sucursal"] = sucursal
     variables["correo"] = correo

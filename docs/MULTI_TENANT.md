@@ -159,7 +159,7 @@ Pasos para migrar de la estructura actual (plana) a tenants:
 
 ### Contexto del problema
 
-El orquestador envía 4 campos de identidad del lead por request (`nombre`, `marca`, `modelo`, `id_bitrix`), que se renderizan en el system prompt dentro de `<lead_identity>`. Esto significa que **el prompt varía por persona**, no solo por empresa.
+El orquestador envía 5 campos de identidad del lead por request (`nombre`, `marca`, `modelo`, `version`, `id_bitrix`), que se renderizan en el system prompt dentro de `<lead_identity>`. Esto significa que **el prompt varía por persona**, no solo por empresa.
 
 La cache key original `(id_empresa,)` causaba un bug: el primer lead que escribía a una empresa generaba el agente con SU prompt, y los siguientes leads de la misma empresa durante los próximos 60 min (TTL) recibían ese prompt ajeno.
 
@@ -175,13 +175,15 @@ class CachedAgent(NamedTuple):
     nombre: str | None
     marca: str | None
     modelo: str | None
+    version: str | None
     id_bitrix: str | None
 
 # En _get_agent():
 cached = get_cached_agent(cache_key)
 if cached is not None:
     if (cached.nombre == nombre and cached.marca == marca
-        and cached.modelo == modelo and cached.id_bitrix == id_bitrix):
+        and cached.modelo == modelo and cached.version == version
+        and cached.id_bitrix == id_bitrix):
         return cached.agent      # HIT exacto
     else:
         invalidate_agent(cache_key)   # STALE, pop manual
@@ -196,7 +198,7 @@ if cached is not None:
 **Idea:** meter el hash de los 4 campos dentro de la propia key. Si cambia cualquier campo → key distinta → miss automático, sin lógica de invalidación.
 
 ```python
-cache_key = (id_empresa, phone, hash((nombre, marca, modelo, id_bitrix)))
+cache_key = (id_empresa, phone, hash((nombre, marca, modelo, version, id_bitrix)))
 cache[cache_key] = agent
 ```
 

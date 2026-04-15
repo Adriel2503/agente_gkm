@@ -1,0 +1,339 @@
+🔷 FLUJO DE VALIDACIÓN Y CITA (KIA)
+1. Validación de financiamiento
+
+Pregunta:
+
+¿Requiere financiamiento?
+
+Opciones:
+
+Requiero financiamiento
+No, sería compra de contado
+Tengo la información necesaria
+{
+UF_CRM_1653688826 — Requiere Financiamiento
+enumeration
+ID	Texto	Orden	Default
+2726	SÍ	0	
+2728	NO	0
+}
+2. (Si elige 1: financiamiento) – Bancos
+
+
+
+Pregunta:
+
+¡Genial! ¿Me puede indicar al menos dos bancos de preferencia?
+
+Opciones:
+
+(Nombres de bancos)
+Tengo la información necesaria
+{
+
+UF_CRM_1757012045526 — Convenio Corporativo
+enumeration
+ID	Texto	Orden	Default
+3880	CENTRO DE EXCELENCIA DE LA ECONOMÍA SOCIAL SOCIEDAD CIVIL RL	0	
+3882	COOPERATIVA NACIONAL DE PRODUCTORES DE SAL RL	0	
+3884	COOPERATIVA DE ELECTRIFICACIÓN RURAL DE GUANACASTE RL	0	
+3886	ASOCIACIÓN DE PRODUCTORES AGRÍCOLAS AMBIENTALISTAS DE BIJAGUA DE UPALA	0	
+3888	UNIÓN NACIONAL DE COOPERATIVAS DE GUANACASTE RL	0	
+3890	UNIÓN DE PRODUCTORES INDEPENDIENTES Y ACTIVIDADES VARIAS	0	
+3892	ASOCIACION DE PRODUCTORES COMUNIDADES UNIDAS EN VERACRUZ	0	
+3894	FORMACIÓN DE EMPRESARIOS Y LÍDERES DE LA ECONOMÍA SOCIAL LA CATALINA RL	0	
+3896	UNIVERSIDAD FUNDEPOS ALMA MATER SOCIEDAD ANÓNIMA	0	
+3898	CENTRO DE ESTUDIOS Y CAPACITACIÓN COOPERATIVA RESPONSABILIDAD LIMITADA CENECOOP RL	0	
+3900	COOPERATIVA DE AHORRO Y CRÉDITO DE LOS EMPLEADOS DEL MINISTERIO DE EDUCACIÓN PÚBLICA RL	0	
+3902	FEDERACIÓN DE ASOCIACIONES COOPERATIVAS DE AHORRO Y CRÉDITO	0	
+3904	ASOCIACIÓN ECOLOGICA PAQUERA, LEPANTO Y CÓBANO	0	
+3906	COOPERATIVA DE AHORRO Y CRÉDITO DE LOS PROFESIONALES EN CIENCIAS MEDICAS	0	
+3908	ASOCIACIÓN DE DESARROLLO INTEGRAL DE LA CRUZ, GUANACASTE	0	
+3910	ASOCIACIÓN DE PRODUCTORES Y COMERCIALIZADORES DE FRUTA TROPICALES DE CORREDORES	0	
+3912	EMPRESA COOPERATIVA DE SERVICIOS PROFESIONALES ECO RL	0	
+3914	COOPERATIVA AGRÍCOLA INDUSTRIAL COOPEVICTORIA RL	0	
+3916	ASOCIACIÓN CONSERVACIONISTA RED QUERCUS	0	
+3918	UNIÓN CANTONAL DE ASOCIACIONES DE GRECIA ALAJUELA	0	
+3920	CORPORACIÓN HORTÍCOLA NACIONAL	0	
+3922	COOPERATIVA DE AHORRO Y CRÉDITO DEL COLEGIO FEDERADO DE INGENIEROS Y ARQUITECTOS DE COSTA RICA	0	
+3924	ASOCIACIÓN ADMINISTRADORA DE SERVICIOS DE AGUA LEPANTO	0	
+3926	ASOCIACIÓN DE DESARROLLO INTEGRAL DE OSTIONAL - ADIO	0	
+3928	FUNDACION GENERO Y SOCIEDAD G E S O	0	
+3930	COOPERATIVA AGROINDUSTRIAL Y DE SERVICIOS MULTIPLES DE PRODUCTORES DE OVINOS RL	0	
+3932	COOPERATIVA AGRÍCOLA INDUSTRIAL DE PRODUCTORES DE FRUTA DE ALTURA DE LOS SANTOS RL	0	
+3934	FUNDACIÓN CALIDAD DE VIDA PARA PERSONAS CON CÁNCER FUNCAVIDA	0	
+3936	FUNDACIÓN NORTE	0	
+3938	FUNDACIÓN PAÍS DE PAZ	0	
+3940	JUNTA DE PENSIONES Y JUBILACIONES DEL MAGISTERIO NACIONAL	0	
+3942	ASOCIACION ROBLEALTO PRO BIENESTAR DEL NIÑO	0	
+3944	ASOCIACIÓN SOLIDARISTA DE GOBERNACIÓN, POLICÍA Y SEGURIDAD PÚBLICA-ASEGOSEP	0	
+3946	COOPERATIVA DE SERVICIOS PROFESIONALES RL	0	
+3948	COOPERATIVA DE SERVICIOS MÚLTIPLES DE LOS AGENTES DE SEGUROS	0	
+3950	COOPERATIVA DE ELECTRIFICACION RURAL DE SAN CARLOS RL	0	
+3952	FUNDACION OTTO SOLERA	0	
+4200	Cooperativa de Ahorro y Crédito del Colegio Federado de Ingenieros y Arquitectos RL	0	
+4202	Cooperativa de Ahorro y Crédito de los Empleados de Coopesa RL	0	
+4204	COOP.DE AHORRO Y CREDITO ANTONIO VEGA GRANADOS, R.L	0	
+4206	Cooperativa de Ahorro y Crédito de los Empleados del Banco Nacional de Costa Rica RL	0	
+4208	Cooperativa de Ahorro y Crédito de los Empleados del Instituto de Acueductos y Alcantarillados RL	0	
+4210	Cooperativa de Ahorro y Crédito de los Empleados del Banco Central RL	0	
+4212	Cooperativa de Ahorro y Crédito del Cantón de Flores R.L	0	
+4214	Cooperativa de Ahorro y Crédito de los Maestros de Parrita y Quepos RL	0	
+4216	Cooperativa de Servicios Múltiples de la Comunidad de Grecia RL	0	
+4218	Cooperativa de Ahorro y Crédito de los Empleados de Helechos Ticos de Costa Rica R.L	0	
+4220	COOP.DE AHO.Y CRED.DE EMPL.DEL HOSP.NAL.DE NI\OS, R.L	0	
+4222	Cooperativa de Ahorro y Crédito de los Empleados del Instituto de Desarrollo Agrario	0	
+4224	Cooperativa de Ahorro y Crédito de los Empleados de Japdeva RL	0	
+4226	Cooperativa de Ahorro y Crédito de los Servidores y Servidoras del Poder Judicial RL	0	
+4228	Cooperativa de Ahorro y Crédito de los Médicos RL	0	
+4230	Cooperativa de Ahorro y Crédito de los Empleados del Ministerio de Educación Pública RL	0	
+4232	Cooperativa de Ahorro y Crédito del Cantón Central de San José RL	0	
+4234	Cooperativa Universitaria de Ahorro y Crédito R.L	0	
+4236	Cooperativa de Ahorro y Crédito de los Empleados de la Recope RL	0	
+4238	Cooperativa de Ahorro y Crédito San Luis Gonzaga RL	0	
+4240	Servicios Financieros San Ramon Alajuela	0	
+4242	Cooperativa de Ahorro y Crédito de los Empleados del Sistema Penitenciario RL	0	
+4244	COOP.D/AH.Y CR.D/L/EMPLEAD.ADMIN.D/STANDARD FRUIT CO., R.L	0	
+4246	COOPERATIVA DE AHORRO Y CREDITO DE PROFESIONALES EN CIENCIAS MEDICASSIPROCIMECA R.L	0	
+4248	Cooperativa de Ahorro y Crédito de los Empleados de Corrugados del Guarco. COOPE SAN MARCOS R.L	0	
+4250	SERVICOOP, R.L.	0	
+4252	COOPEAMISTAD, R.L.	0	
+4254	COOP.DE AHO.CRED.REFACCIONARIO DE ALFARO RUIZ,R.L	0	
+4256	COOPECO R.L. COOP.D/AH.Y CR.EMPL.D/L/CONTRALORIA GNL.D/LA REPUBLICA, R.L.	0	
+4258	COOP.DE AHORRO Y CREDITO DE LOS EMPLEADOS DEL I.C.E.R, R.L	0	
+4260	COOPEJORNAL R.L. COOP.DE AHORRO Y CREDITO DE LOS EMPLEADOS DEL INFOCOOP, R.L.	0	
+4262	COOP.DE AHO.Y CRE.DEL INSTITUTO MATERNO INFANTIL CARIT, R.L	0	
+4264	CCC.CA	0	
+4266	CONAPROSAL PRODUCTORES R.L.	0	
+4268	COOCAFE R.L.	0	
+4270	COOCIQUE R.L.	0	
+4272	COOPEAGRI EL GENERAL R.L.	0	
+4274	COOPEAGROPAL R.L.	0	
+4276	COOPEALAJUELA R.L.	0	
+4278	COOPEALIADOS R.L.	0	
+4280	COOPEALIANZA R.L.	0	
+4282	COOPEANDE NO.1 R.L.	0	
+4284	COOPEANDE NO.5 R.L.	0	
+4286	COOPEBANPO R.L.	0	
+4288	COOPECAJA R.L.	0	
+4290	COOPECARNISUR R.L.	0	
+4292	COOPEGUANACASTE R.L.	0	
+4294	COOPEJUDICIAL R.L.	0	
+4296	COOPELESCA R.L.	0	
+4298	COOPEMAPRO R.L.	0	
+4300	COOPEMEP R.L.	0	
+4302	COOPEMONTECILLOS R.L.	0	
+4304	COOPEPROSA R.L.	0	
+4306	COOPESA R.L.	0	
+4308	COOPESALUD R.L.	0	
+4310	COOPESANTOS R.L.	0	
+4312	COOPESIBA R.L.	0	
+4314	COOPESOL R.L.	0	
+4316	COOPEVICTORIA R.L.	0	
+4318	COOPROLE R.L.	0	
+4320	COOPRONARANJO R.L.	0	
+4322	CREDECOOP R.L.	0	
+4324	FECOOPA R.L.	0	
+4326	FECOOPSE R.L.	0	
+4328	FENACOOTAXI R.L.	0	
+4330	GECSE R.L.	0	
+4332	INFOCOOP	0	
+4334	LA CATALINA R.L.	0	
+4336	UNACOOP R.L.	0	
+4338	UNCARIBE R.L	0	
+4340	UNCOOPA R.L.	0	
+4342	UNCOSANTOS R.L	0	
+4344	UNICOOP R.L.	0	
+4346	UNIVIVIENDA R.L.	0	
+4348	URCCA R.L.	0	
+4350	URCOOPA R.L.	0	
+4352	URCOZON R.L.	0	
+4354	URCOGUA R.L	0	
+4356	CENECOOP RL	0	
+4358	UNICOOP RL	0	
+4360	CCH RL	0	
+4362	COOPRENSA RL	0	
+4364	UNACOOP RL	0	
+4366	COOPEANDE NO.7 RL	0	
+4368	ASOKIM	0	
+4370	MUMIS	0	
+4372	CLUB CARIARI	0
+
+}
+
+
+3. Validación de vehículo en parte de pago
+
+Pregunta:
+
+¡Excelente! ¿Tiene algún vehículo para entregar como parte del pago?
+
+{
+UF_CRM_1653599755 — Entrega Vehículo
+enumeration
+ID	Texto	Orden	Default
+2702	SÍ	0	
+2704	NO	0	
+Editar descripcion
+}
+
+Opciones:
+
+
+Sí
+
+
+No
+
+{
+no llena nada
+}
+4. (Si elige Sí) – Datos del vehículo
+
+Pregunta:
+
+Perfecto, ¿me puede indicar la marca, modelo, año y kilometraje de su vehículo?
+
+marca:
+{
+UF_CRM_1534533239 — Marca
+enumeration
+ID	Texto	Orden	Default
+97	Audi	0	
+99	BMW	0	
+101	Chevrolet	0	
+103	Citroen	0	
+105	Fiat	0	
+107	Ford	0	
+109	Honda	0	
+111	Hyundai	0	
+113	Jac	0	
+115	Kia	0	
+117	Land Rover	0	
+119	Lexus	0	
+1441	Mazda	0	
+121	Mercedes Benz	0	
+123	Mini	0	
+125	Mitsubishi	0	
+127	Nissan	0	
+129	Peugeot	0	
+131	Porsche	0	
+133	Renault	0	
+135	Subaru	0	
+137	Suzuki	0	
+139	Toyota	0	
+141	VW	0	
+143	Otro	0
+}
+
+modelo:
+{
+UF_CRM_1653605318164 — Modelo de Vehículo Usado
+}
+
+año:
+
+{
+UF_CRM_1534532283 — Año del Vehículo
+}
+kilometraje de su vehículo:
+{
+UF_CRM_1534533297 — Kilometraje
+}
+
+5. Tiempo estimado de compra
+
+Pregunta:
+
+¿Tiene una idea del tiempo de compra?
+
+Opciones:
+
+Menos de 1 mes
+Entre 1 y 3 meses
+De 3 a 6 meses
+Más de 6 meses
+
+{
+
+UF_CRM_1721064189466 — Expectativa de Compra
+enumeration
+Plazo estimado de compra del cliente.
+ID	Texto	Orden	Default
+3108	Menos de 1 mes	0	
+3110	Entre 1 y 3 meses	0	
+3112	Entre 3 y 6 meses	0	
+10082	Más de 6 meses	0
+}
+
+
+6. Validación de presupuesto
+
+
+Pregunta:
+
+Para poder asesorarle mejor, ¿tiene una idea de su presupuesto (contado o cuota)?
+
+Opciones:
+
+Sí
+No, prefiero que un asesor me contacte para definirlo
+7. (Si elige Sí) – Monto
+
+Pregunta:
+
+Muy bien, ¿me puede indicar cuál es su presupuesto?
+
+
+
+{
+
+SOURCE_DESCRIPTION
+
+}
+
+📅 8. CITA / VISITA
+
+Mensaje:
+
+¡Perfecto! Nada como ver de cerca tu futuro KIA para sentir la diferencia.
+👉 Dime, ¿qué día desea agendar la visita a la sucursal?
+
+Opciones:
+
+Agendar visita (auto agenda)
+Quiero que me llame un asesor
+
+
+{
+
+UF_CRM_1728502747862 — Cita
+
+UF_CRM_1728502823862 — Fecha Cita
+
+}
+
+
+
+
+
+
+
+
+
+
+
+✅ 9. CIERRE
+
+Mensaje:
+
+Muchas gracias por toda esta información tan valiosa.
+Ahora voy a ponerle en contacto con un asesor que se ajuste mejor a su perfil y a sus necesidades.
+
+¿Tiene alguna otra consulta o pregunta?
+
+🔧 Notas (importante para tu implementación)
+Los pasos 2 y 4 son condicionales (solo si responde 1 o “Sí”).
+El paso 7 es condicional (solo si responde “Sí” en presupuesto).
+Puedes mapear cada paso a state o stage en tu agente (ej: validacion_financiamiento, bancos, vehiculo_tradein, etc.).
+Ideal para integrarlo con tu endpoint /api/agent/chat como flujo guiado.

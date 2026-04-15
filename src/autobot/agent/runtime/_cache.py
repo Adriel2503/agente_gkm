@@ -22,7 +22,7 @@ logger = get_logger(__name__)
 
 # Cache de agentes compilados: clave = (id_empresa, phone).
 # Un agente por lead, porque el system prompt incluye <lead_identity>
-# renderizada con nombre/marca/modelo/sucursal/correo/id_bitrix específicos de cada persona.
+# renderizada con nombre/marca/modelo/version/sucursal/correo/id_bitrix específicos de cada persona.
 # TTL default 60 min. Los cambios de campos del lead (raros) se reflejan
 # en el próximo MISS tras expirar el TTL.
 class _LoggingTTLCache(TTLCache):

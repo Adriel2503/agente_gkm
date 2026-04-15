@@ -127,6 +127,7 @@ async def _process_and_callback(req: ChatRequest) -> None:
                 nombre=req.nombre,
                 marca=req.marca,
                 modelo=req.modelo,
+                version=req.version,
                 id_bitrix=req.id_bitrix,
                 sucursal=req.sucursal,
                 correo=req.correo,
