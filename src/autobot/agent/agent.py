@@ -43,12 +43,14 @@ async def _get_agent(
     marca: str | None = None,
     modelo: str | None = None,
     id_bitrix: str | None = None,
+    sucursal: str | None = None,
+    correo: str | None = None,
 ):
     """
     Devuelve el agente compilado para (id_empresa, phone).
 
     El system prompt incluye <lead_identity> renderizada con los datos del
-    lead específico (nombre/marca/modelo/id_bitrix), por lo que el cache se
+    lead específico (nombre/marca/modelo/sucursal/correo/id_bitrix), por lo que el cache se
     segmenta por persona y no solo por empresa; así evitamos que el primer
     lead de una empresa contamine el prompt de los siguientes.
 
@@ -100,6 +102,8 @@ async def _get_agent(
                 marca=marca,
                 modelo=modelo,
                 id_bitrix=id_bitrix,
+                sucursal=sucursal,
+                correo=correo,
             )
 
             # Crear agente con API moderna (response_format: reply + url opcional)
@@ -135,6 +139,8 @@ async def process_message(
     marca: str | None = None,
     modelo: str | None = None,
     id_bitrix: str | None = None,
+    sucursal: str | None = None,
+    correo: str | None = None,
 ) -> tuple[str, str | None]:
     """
     Procesa un mensaje del cliente usando LangChain 1.2+ Agent.
@@ -181,7 +187,17 @@ async def process_message(
     lock = acquire_session_lock(phone)
     async with lock:
         try:
-            agent = await _get_agent(id_empresa, phone, config, nombre, marca, modelo, id_bitrix)
+            agent = await _get_agent(
+                id_empresa,
+                phone,
+                config,
+                nombre,
+                marca,
+                modelo,
+                id_bitrix,
+                sucursal,
+                correo,
+            )
         except Exception as e:
             logger.error("[AGENT] Error creando agent: %s", e, exc_info=True)
             record_chat_error("agent_creation_error")

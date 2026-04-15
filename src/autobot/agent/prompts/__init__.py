@@ -43,6 +43,8 @@ async def build_gqm_system_prompt(
     marca: str | None = None,
     modelo: str | None = None,
     id_bitrix: str | None = None,
+    sucursal: str | None = None,
+    correo: str | None = None,
 ) -> str:
     """
     Construye el system prompt del agente.
@@ -60,6 +62,8 @@ async def build_gqm_system_prompt(
     variables["marca"] = marca
     variables["modelo"] = modelo
     variables["id_bitrix"] = id_bitrix
+    variables["sucursal"] = sucursal
+    variables["correo"] = correo
 
     # Fecha y hora actual en Perú (para que el agente sepa "hoy" y "mañana")
     now = _now_peru()

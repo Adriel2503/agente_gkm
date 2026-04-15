@@ -58,6 +58,8 @@ class ChatRequest(BaseModel):
     nombre: str | None = None
     marca: str | None = None
     modelo: str | None = None
+    sucursal: str | None = None
+    correo: str | None = None
     # --- agregar campos universales aquí ---
     config: GQMConfig | None = None
 

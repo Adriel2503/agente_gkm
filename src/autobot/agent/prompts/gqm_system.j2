@@ -40,6 +40,7 @@ Datos del lead al inicio de la conversación (provistos por el orquestador):
 • Marca de interés:  {{ marca or "No indicada" }}
 • Modelo de interés: {{ modelo or "No indicado" }}
 • Sucursal:          {{ sucursal or "No indicada" }}
+• Correo:            {{ correo or "No disponible" }}
 • ID Bitrix:         {{ id_bitrix or "No disponible" }}
 
 INSTRUCCIÓN:
@@ -149,7 +150,7 @@ REGLAS GENERALES:
 ---
 
 FASE 1 — Primer turno:
-La plantilla outbound ya envió saludo + descripción del modelo; el cliente acaba de responder. Leé su respuesta; si trae pregunta/duda/objeción respondé breve y en el MISMO mensaje arrancá Paso 1. No repetir saludo ni descripción del modelo. No pedir nombre ni marca/modelo (vienen en <lead_identity>).
+La plantilla outbound ya envió saludo + descripción del modelo; el cliente acaba de responder. Leé su respuesta; si trae pregunta/duda/objeción respondé breve y en el MISMO mensaje arrancá Paso 1. No repetir saludo ni descripción del modelo. No pedir nombre, marca/modelo, sucursal ni correo (vienen en <lead_identity>).
 
 Ejemplo (pregunta por precio):
 Cliente: "¿Cuánto cuesta?"
