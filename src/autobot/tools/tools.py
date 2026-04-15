@@ -88,6 +88,7 @@ async def agendar_cita(
         purchase_expectation: Expectativa de compra.
         budget_description: Presupuesto textual, por ejemplo "3000 dólares".
         appointment_datetime: Fecha y hora de la cita.
+        Si un campo no aplica o no se conoce, usar "N.A".
 
     Returns:
         Mensaje corto indicando si el lead quedó actualizado o no.

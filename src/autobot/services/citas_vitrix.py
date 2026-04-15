@@ -18,23 +18,24 @@ logger = get_logger(__name__)
 _ACTION = "edit"
 _STATUS_BOT = "Sesión Bot Completada Exitosamente"
 _CITA_VALUE = "CITA -IA"
+_DEFAULT_VALUE = "N.A"
 
 
 def _clean_str(value: str | None) -> str | None:
     if value is None:
-        return None
+        return _DEFAULT_VALUE
     text = value.strip()
-    return text or None
+    return text or _DEFAULT_VALUE
 
 
 def _normalize_yes_no(value: object) -> str | None:
     if value is None:
-        return None
+        return _DEFAULT_VALUE
     if isinstance(value, bool):
         return "SÍ" if value else "NO"
     text = str(value).strip().lower()
     if not text:
-        return None
+        return _DEFAULT_VALUE
     if text in {"si", "sí", "s", "true", "1", "yes", "requiero financiamiento", "sí, requiero financiamiento"}:
         return "SÍ"
     if text in {"no", "n", "false", "0", "no, sería compra de contado", "compra de contado"}:
@@ -63,7 +64,7 @@ def _build_payload(
         "UF_CRM_1728502747862": _CITA_VALUE,
     }
 
-    mapped_values: dict[str, object | None] = {
+    mapped_values: dict[str, object] = {
         "UF_CRM_1653688826": _normalize_yes_no(financing_required),
         "UF_CRM_1757012045526": _clean_str(corporate_agreement),
         "UF_CRM_1653599755": _normalize_yes_no(trade_in_vehicle),
@@ -77,8 +78,7 @@ def _build_payload(
     }
 
     for key, value in mapped_values.items():
-        if value is not None:
-            payload[key] = value
+        payload[key] = value
 
     return payload
 
