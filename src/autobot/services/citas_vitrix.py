@@ -7,6 +7,7 @@ La idempotencia se delega al prompt del agente.
 """
 
 import httpx
+import unicodedata
 
 from .. import config as app_config
 from ..infra import get_client
@@ -33,14 +34,52 @@ def _normalize_yes_no(value: object) -> str | None:
         return _DEFAULT_VALUE
     if isinstance(value, bool):
         return "SÍ" if value else "NO"
-    text = str(value).strip().lower()
+    text = str(value).strip()
     if not text:
         return _DEFAULT_VALUE
-    if text in {"si", "sí", "s", "true", "1", "yes", "requiero financiamiento", "sí, requiero financiamiento"}:
+
+    normalized = unicodedata.normalize("NFKD", text).encode("ascii", "ignore").decode("ascii").lower()
+    normalized = " ".join(normalized.split())
+
+    affirmative_phrases = (
+        "si",
+        "s",
+        "yes",
+        "y",
+        "true",
+        "1",
+        "claro",
+        "si quiero",
+        "quiero financiamiento",
+        "requiero financiamiento",
+        "quiero financiar",
+        "si, requiero financiamiento",
+        "si claro",
+        "si, claro",
+        "afirmativo",
+        "con financiamiento",
+    )
+    negative_phrases = (
+        "no",
+        "n",
+        "false",
+        "0",
+        "no gracias",
+        "no, gracias",
+        "contado",
+        "compra de contado",
+        "sin financiamiento",
+        "no requiero financiamiento",
+        "prefiero contado",
+        "sin credito",
+        "sin crédito",
+    )
+
+    if normalized in affirmative_phrases or any(phrase in normalized for phrase in ("si ", "si,", "si.", "quiero financiamiento", "requiero financiamiento", "quiero financiar")):
         return "SÍ"
-    if text in {"no", "n", "false", "0", "no, sería compra de contado", "compra de contado"}:
+    if normalized in negative_phrases or any(phrase in normalized for phrase in ("no ", "no,", "no.", "compra de contado", "sin financiamiento", "prefiero contado")):
         return "NO"
-    return str(value).strip()
+    return _DEFAULT_VALUE
 
 
 def _build_payload(
