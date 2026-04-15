@@ -7,7 +7,7 @@ NO están expuestas directamente al orquestador.
 from langchain.tools import tool, ToolRuntime
 
 from ..services.busqueda_kia import buscar_vehiculo_rag, format_kia_resultados
-from ..services.citas_vitrix import crear_task_confirmar_cita
+from ..services.citas_vitrix import actualizar_lead_cita
 from ..logger import get_logger
 from ..metrics import track_tool_execution, record_tool_validation_error
 
@@ -62,44 +62,99 @@ async def buscar_vehiculo(
 
 @tool
 async def agendar_cita(
-    description: str,
+    financing_required: str | None = None,
+    corporate_agreement: str | None = None,
+    trade_in_vehicle: str | None = None,
+    used_vehicle_brand: str | None = None,
+    used_vehicle_model: str | None = None,
+    used_vehicle_year: str | None = None,
+    used_vehicle_mileage: str | None = None,
+    purchase_expectation: str | None = None,
+    budget_description: str | None = None,
+    appointment_datetime: str | None = None,
     runtime: ToolRuntime = None,
 ) -> str:
     """
-    Registra la cita agendada del lead en el CRM con el historial del
-    perfilamiento, para que el asesor humano la procese.
+    Actualiza el lead en CRM con los campos del flujo comercial.
 
     Args:
-        description: Bloque Q&A del perfilamiento (8 preguntas canónicas
-            del flujo) en formato "P: ...\\nR: ..." por línea. Ver
-            <tools> del system prompt para el formato completo y reglas
-            de uso.
+        financing_required: Requiere financiamiento (SÍ/NO).
+        corporate_agreement: Convenio corporativo seleccionado.
+        trade_in_vehicle: Entrega de vehículo en parte de pago (SÍ/NO).
+        used_vehicle_brand: Marca del vehículo en parte de pago.
+        used_vehicle_model: Modelo del vehículo en parte de pago.
+        used_vehicle_year: Año del vehículo en parte de pago.
+        used_vehicle_mileage: Kilometraje del vehículo en parte de pago.
+        purchase_expectation: Expectativa de compra.
+        budget_description: Presupuesto textual, por ejemplo "3000 dólares".
+        appointment_datetime: Fecha y hora de la cita.
 
     Returns:
-        Mensaje corto indicando si la cita quedó registrada o no.
+        Mensaje corto indicando si el lead quedó actualizado o no.
     """
     logger.info("[agendar_cita] Tool en uso: agendar_cita")
 
-    if not description or not description.strip():
+    if not any(
+        value is not None and str(value).strip()
+        for value in (
+            financing_required,
+            corporate_agreement,
+            trade_in_vehicle,
+            used_vehicle_brand,
+            used_vehicle_model,
+            used_vehicle_year,
+            used_vehicle_mileage,
+            purchase_expectation,
+            budget_description,
+            appointment_datetime,
+        )
+    ):
         record_tool_validation_error("agendar_cita")
-        return "Necesito los detalles de la cita para registrarla."
+        return "Necesito datos del flujo para actualizar el lead."
 
     id_bitrix = getattr(runtime.context, "id_bitrix", None) if runtime else None
     if not id_bitrix:
         logger.warning("[agendar_cita] id_bitrix ausente en el contexto")
-        return "No puedo registrar la cita en este momento."
+        return "No puedo actualizar el lead en este momento."
 
     try:
         with track_tool_execution("agendar_cita"):
-            result = await crear_task_confirmar_cita(id_bitrix, description.strip())
+            result = await actualizar_lead_cita(
+                id_bitrix=id_bitrix,
+                financing_required=financing_required,
+                corporate_agreement=corporate_agreement,
+                trade_in_vehicle=trade_in_vehicle,
+                used_vehicle_brand=used_vehicle_brand,
+                used_vehicle_model=used_vehicle_model,
+                used_vehicle_year=used_vehicle_year,
+                used_vehicle_mileage=used_vehicle_mileage,
+                purchase_expectation=purchase_expectation,
+                budget_description=budget_description,
+                appointment_datetime=appointment_datetime,
+            )
     except Exception as e:
         logger.error("[agendar_cita] Error inesperado: %s", e, exc_info=True)
-        return "No pude registrar la cita en este momento. Intenta nuevamente."
+        return "No pude actualizar el lead en este momento. Intenta nuevamente."
 
     if result["success"]:
-        return "Cita registrada correctamente."
+        return "Lead actualizado correctamente."
 
-    return "No pude registrar la cita en este momento. Intenta nuevamente."
+    resolve_errors = result.get("resolve_errors") or []
+    if resolve_errors:
+        first_error = resolve_errors[0]
+        field = first_error.get("field", "campo")
+        message = first_error.get("message", "error de validación")
+        options = first_error.get("options")
+        if isinstance(options, list) and options:
+            options_text = ", ".join(str(option) for option in options[:5])
+            return f"No pude actualizar el lead: {field}. {message}. Opciones: {options_text}."
+        return f"No pude actualizar el lead: {field}. {message}."
+
+    error_msg = result.get("error")
+    if isinstance(error_msg, str) and error_msg.strip():
+        return f"No pude actualizar el lead: {error_msg.strip()}."
+
+    return "No pude actualizar el lead en este momento. Intenta nuevamente."
 
 
 # Lista de todas las tools disponibles para el agente

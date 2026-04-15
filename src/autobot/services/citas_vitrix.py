@@ -1,14 +1,10 @@
 """
 Servicio de escritura en CRM Vitrix (sobre Bitrix24).
-Crea tasks para que el equipo humano las procese (ej. confirmar citas).
+Actualiza el lead con los campos del flujo comercial.
 
 NOTA: Tool de ESCRITURA — sin retry, sin circuit breaker, sin cache.
-La idempotencia se delega al prompt del agente (controla no llamar duplicado
-usando el historial de conversación).
+La idempotencia se delega al prompt del agente.
 """
-
-from datetime import datetime
-from zoneinfo import ZoneInfo
 
 import httpx
 
@@ -19,81 +15,237 @@ from ..metrics import track_api_call
 
 logger = get_logger(__name__)
 
-_ACTION = "task"
-_TITLE = "Confirmar Cita - IA"
-_DEADLINE_FMT = "%Y-%m-%d %H:%M:%S"
+_ACTION = "edit"
+_STATUS_BOT = "Sesión Bot Completada Exitosamente"
+_CITA_VALUE = "CITA -IA"
 
 
-async def crear_task_confirmar_cita(id_bitrix: str, description: str) -> dict:
+def _clean_str(value: str | None) -> str | None:
+    if value is None:
+        return None
+    text = value.strip()
+    return text or None
+
+
+def _normalize_yes_no(value: object) -> str | None:
+    if value is None:
+        return None
+    if isinstance(value, bool):
+        return "SÍ" if value else "NO"
+    text = str(value).strip().lower()
+    if not text:
+        return None
+    if text in {"si", "sí", "s", "true", "1", "yes", "requiero financiamiento", "sí, requiero financiamiento"}:
+        return "SÍ"
+    if text in {"no", "n", "false", "0", "no, sería compra de contado", "compra de contado"}:
+        return "NO"
+    return str(value).strip()
+
+
+def _build_payload(
+    lead_id: int,
+    financing_required: object | None = None,
+    corporate_agreement: str | None = None,
+    trade_in_vehicle: object | None = None,
+    used_vehicle_brand: str | None = None,
+    used_vehicle_model: str | None = None,
+    used_vehicle_year: str | None = None,
+    used_vehicle_mileage: str | None = None,
+    purchase_expectation: str | None = None,
+    budget_description: str | None = None,
+    appointment_datetime: str | None = None,
+) -> dict[str, object]:
+    payload: dict[str, object] = {
+        "action": _ACTION,
+        "api_key": app_config.APIKEY_VITRIX,
+        "ID": lead_id,
+        "UF_CRM_1774974891": _STATUS_BOT,
+        "UF_CRM_1728502747862": _CITA_VALUE,
+    }
+
+    mapped_values: dict[str, object | None] = {
+        "UF_CRM_1653688826": _normalize_yes_no(financing_required),
+        "UF_CRM_1757012045526": _clean_str(corporate_agreement),
+        "UF_CRM_1653599755": _normalize_yes_no(trade_in_vehicle),
+        "UF_CRM_1534533239": _clean_str(used_vehicle_brand),
+        "UF_CRM_1653605318164": _clean_str(used_vehicle_model),
+        "UF_CRM_1534532283": _clean_str(used_vehicle_year),
+        "UF_CRM_1534533297": _clean_str(used_vehicle_mileage),
+        "UF_CRM_1721064189466": _clean_str(purchase_expectation),
+        "SOURCE_DESCRIPTION": _clean_str(budget_description),
+        "UF_CRM_1728502823862": _clean_str(appointment_datetime),
+    }
+
+    for key, value in mapped_values.items():
+        if value is not None:
+            payload[key] = value
+
+    return payload
+
+
+async def actualizar_lead_cita(
+    id_bitrix: str,
+    financing_required: object | None = None,
+    corporate_agreement: str | None = None,
+    trade_in_vehicle: object | None = None,
+    used_vehicle_brand: str | None = None,
+    used_vehicle_model: str | None = None,
+    used_vehicle_year: str | None = None,
+    used_vehicle_mileage: str | None = None,
+    purchase_expectation: str | None = None,
+    budget_description: str | None = None,
+    appointment_datetime: str | None = None,
+) -> dict:
     """
-    POST directo a Vitrix para crear task "Confirmar Cita - IA".
+    POST directo a Vitrix para actualizar el lead con los campos del flujo.
 
     Args:
         id_bitrix: ID del lead en Bitrix/Vitrix (string, se castea a int).
-        description: Detalles de la cita (modelo, sucursal, fecha elegida, etc.).
+        financing_required: Requiere financiamiento (SÍ/NO o booleano).
+        corporate_agreement: Convenio corporativo seleccionado.
+        trade_in_vehicle: Entrega de vehículo en parte de pago (SÍ/NO o booleano).
+        used_vehicle_brand: Marca del vehículo en parte de pago.
+        used_vehicle_model: Modelo del vehículo en parte de pago.
+        used_vehicle_year: Año del vehículo en parte de pago.
+        used_vehicle_mileage: Kilometraje del vehículo en parte de pago.
+        purchase_expectation: Expectativa de compra.
+        budget_description: Presupuesto textual, por ejemplo "3000 dólares".
+        appointment_datetime: Fecha y hora de la cita.
 
     Returns:
-        {"success": bool, "task_id": int | None, "error": str | None}
+        Dict con la respuesta normalizada de Vitrix.
     """
     try:
         lead_id = int(id_bitrix)
     except (TypeError, ValueError):
         logger.warning("[VITRIX] id_bitrix inválido — valor=%r", id_bitrix)
-        return {"success": False, "task_id": None, "error": "id_bitrix inválido"}
+        return {
+            "success": False,
+            "lead_id": None,
+            "request_id": None,
+            "resolve_errors": [],
+            "brand_routed": [],
+            "bitrix_response": None,
+            "error": "id_bitrix inválido",
+            "time_ms": None,
+        }
 
-    deadline = datetime.now(ZoneInfo(app_config.TIMEZONE)).strftime(_DEADLINE_FMT)
-
-    payload = {
-        "action": _ACTION,
-        "api_key": app_config.APIKEY_VITRIX,
-        "ID": lead_id,
-        "TITLE": _TITLE,
-        "DESCRIPTION": description,
-        "DEADLINE": deadline,
-    }
+    payload = _build_payload(
+        lead_id=lead_id,
+        financing_required=financing_required,
+        corporate_agreement=corporate_agreement,
+        trade_in_vehicle=trade_in_vehicle,
+        used_vehicle_brand=used_vehicle_brand,
+        used_vehicle_model=used_vehicle_model,
+        used_vehicle_year=used_vehicle_year,
+        used_vehicle_mileage=used_vehicle_mileage,
+        purchase_expectation=purchase_expectation,
+        budget_description=budget_description,
+        appointment_datetime=appointment_datetime,
+    )
 
     logger.info(
-        "[VITRIX] POST crear task — lead_id=%s deadline=%s desc_preview=%s",
-        lead_id, deadline, description[:80],
+        "[VITRIX] POST edit lead — lead_id=%s campos=%s",
+        lead_id,
+        sorted(k for k in payload.keys() if k not in {"action", "api_key", "ID"}),
     )
 
     try:
-        with track_api_call("vitrix_crear_task"):
+        with track_api_call("vitrix_edit_lead"):
             response = await get_client().post(app_config.VITRIX_API_URL, json=payload)
-            response.raise_for_status()
-            data = response.json()
-    except httpx.HTTPStatusError as e:
-        logger.error(
-            "[VITRIX] HTTP %s — lead_id=%s body=%s",
-            e.response.status_code, lead_id, e.response.text[:300],
-            exc_info=True,
-        )
-        return {"success": False, "task_id": None, "error": f"HTTP {e.response.status_code}"}
+            try:
+                data = response.json()
+            except ValueError:
+                body_preview = response.text[:300]
+                logger.error(
+                    "[VITRIX] Respuesta no JSON — status=%s lead_id=%s body=%s",
+                    response.status_code,
+                    lead_id,
+                    body_preview,
+                )
+                return {
+                    "success": False,
+                    "lead_id": lead_id,
+                    "request_id": None,
+                    "resolve_errors": [],
+                    "brand_routed": [],
+                    "bitrix_response": None,
+                    "error": f"Respuesta no JSON del API (HTTP {response.status_code})",
+                    "time_ms": None,
+                }
     except httpx.TransportError as e:
         logger.error("[VITRIX] TransportError — lead_id=%s err=%s", lead_id, e, exc_info=True)
-        return {"success": False, "task_id": None, "error": f"transport: {e}"}
+        return {
+            "success": False,
+            "lead_id": lead_id,
+            "request_id": None,
+            "resolve_errors": [],
+            "brand_routed": [],
+            "bitrix_response": None,
+            "error": f"transport: {e}",
+            "time_ms": None,
+        }
     except Exception as e:
         logger.error("[VITRIX] Error inesperado — lead_id=%s err=%s", lead_id, e, exc_info=True)
-        return {"success": False, "task_id": None, "error": str(e)}
+        return {
+            "success": False,
+            "lead_id": lead_id,
+            "request_id": None,
+            "resolve_errors": [],
+            "brand_routed": [],
+            "bitrix_response": None,
+            "error": str(e),
+            "time_ms": None,
+        }
 
     success = bool(data.get("success"))
-    task_id = data.get("task_id")
     request_id = data.get("request_id")
+    resolve_errors = data.get("resolve_errors") or []
+    brand_routed = data.get("brand_routed") or []
+    bitrix_response = data.get("bitrix_response")
+    error_msg = data.get("error")
     time_ms = data.get("time_ms")
+
+    result = {
+        "success": success,
+        "lead_id": data.get("lead_id", lead_id),
+        "request_id": request_id,
+        "resolve_errors": resolve_errors,
+        "brand_routed": brand_routed,
+        "bitrix_response": bitrix_response,
+        "error": error_msg,
+        "time_ms": time_ms,
+    }
 
     if success:
         logger.info(
-            "[VITRIX] Task creada — task_id=%s lead_id=%s request_id=%s time_ms=%s",
-            task_id, lead_id, request_id, time_ms,
+            "[VITRIX] Lead actualizado — lead_id=%s request_id=%s time_ms=%s",
+            result["lead_id"],
+            request_id,
+            time_ms,
         )
-        return {"success": True, "task_id": task_id, "error": None}
+        return result
 
-    error_msg = data.get("error") or "desconocido"
-    logger.warning(
-        "[VITRIX] API rechazó — error=%s lead_id=%s request_id=%s time_ms=%s",
-        error_msg, lead_id, request_id, time_ms,
-    )
-    return {"success": False, "task_id": None, "error": error_msg}
+    if resolve_errors:
+        logger.warning(
+            "[VITRIX] Validación rechazada — lead_id=%s request_id=%s errors=%s",
+            result["lead_id"],
+            request_id,
+            resolve_errors,
+        )
+    else:
+        logger.warning(
+            "[VITRIX] API rechazó — lead_id=%s request_id=%s error=%s status=%s",
+            result["lead_id"],
+            request_id,
+            error_msg,
+            response.status_code,
+        )
+
+    if not error_msg and response.status_code >= 400:
+        result["error"] = f"HTTP {response.status_code}"
+
+    return result
 
 
-__all__ = ["crear_task_confirmar_cita"]
+__all__ = ["actualizar_lead_cita"]
