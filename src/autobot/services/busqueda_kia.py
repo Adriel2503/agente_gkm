@@ -9,20 +9,13 @@ Resiliencia:
   - Métricas: track_api_call mide latencia, track_tool_execution mide duración total.
 """
 
-from cachetools import TTLCache
-
 from .. import config as app_config
 from ..logger import get_logger
-from ..metrics import track_tool_execution, track_api_call, DEGRADATION, SEARCH_CACHE
+from ..metrics import track_tool_execution, track_api_call, DEGRADATION
 from ..infra import post_with_logging, resilient_call
 from ..config import kia_rag_cb
 
 logger = get_logger(__name__)
-
-_search_cache: TTLCache = TTLCache(
-    maxsize=app_config.SEARCH_CACHE_MAXSIZE,
-    ttl=app_config.SEARCH_CACHE_TTL_MINUTES * 60,
-)
 
 
 async def buscar_vehiculo_rag(
@@ -39,13 +32,6 @@ async def buscar_vehiculo_rag(
     Returns:
         {"success": bool, "resultados": [...], "total": int, "mensaje": str | None, "error": str | None}
     """
-    cache_key = query.strip().lower()
-    cached = _search_cache.get(cache_key)
-    if cached is not None:
-        SEARCH_CACHE.labels(result="hit").inc()
-        logger.info("[buscar_vehiculo_rag] Cache hit para: %s", query)
-        return cached
-
     try:
         if log_apis:
             logger.info("[buscar_vehiculo_rag] Llamando RAG API con query: %s", query)
@@ -69,7 +55,6 @@ async def buscar_vehiculo_rag(
                 "error": "Respuesta inesperada de la API",
             }
 
-        SEARCH_CACHE.labels(result="miss").inc()
         resultados = response.get("resultados", [])
         result = {
             "success": True,
@@ -78,7 +63,6 @@ async def buscar_vehiculo_rag(
             "mensaje": response.get("mensaje"),
             "error": None,
         }
-        _search_cache[cache_key] = result
         logger.info(
             "[buscar_vehiculo_rag] %d resultado(s) para: %s",
             len(result["resultados"]),
@@ -87,7 +71,6 @@ async def buscar_vehiculo_rag(
         return result
 
     except RuntimeError:
-        SEARCH_CACHE.labels(result="circuit_open").inc()
         DEGRADATION.labels(service="kia_rag", reason="circuit_open").inc()
         logger.warning("[buscar_vehiculo_rag] Circuit breaker abierto — RAG API no disponible")
         return {
@@ -124,16 +107,15 @@ _HEADER_FIELDS: set[str] = {
 
 _FIELD_GROUPS: dict[str, set[str]] = {
     "Identificación": {
-        "id",
         "introduccion_de_modelo",
         "caracteristicas_generales",
         "colores_disponibles",
-        "tipo_de_carroceria",
     },
     "Descripción": {
         "descripcion_del_modelo",
     },
     "Motor y mecánica": {
+        "tipo_de_carroceria",
         "motor_cilindros",
         "cilindrada_combustible_tipo",
         "transmision",
@@ -190,10 +172,14 @@ _FIELD_GROUPS: dict[str, set[str]] = {
         "suspension_delanteros",
         "suspension_posteriores",
     },
+    "Recursos multimedia": {
+        "url_imagen",
+        "url_pdf",
+        "url_video",
+    },
 }
 
 _FIELD_LABELS: dict[str, str] = {
-    "id": "ID",
     "marca": "Marca",
     "modelo": "Modelo",
     "introduccion_de_modelo": "Introducción del modelo",
@@ -256,9 +242,14 @@ _FIELD_LABELS: dict[str, str] = {
     "monitor_de_punto_ciego": "Monitor de punto ciego",
     "asientos_electricos": "Asientos eléctricos",
     "autonomia_ev": "Autonomía EV",
+    "url_imagen": "Imagen",
+    "url_pdf": "Ficha técnica (PDF)",
+    "url_video": "Video",
 }
 
 _ALL_GROUPED: set[str] = _HEADER_FIELDS | set().union(*_FIELD_GROUPS.values())
+
+_SKIP_FIELDS: set[str] = {"id"}
 
 
 def _format_field(key: str, value: object) -> str:
@@ -314,6 +305,8 @@ def format_kia_resultados(resultados: list[dict]) -> str:
         # Campos no agrupados (nuevos de la API)
         otros = []
         for key, value in r.items():
+            if key in _SKIP_FIELDS:
+                continue
             if key not in _ALL_GROUPED and value is not None and value != "" and value != "N/A":
                 otros.append(f"  {key}: {value}")
         if otros:
