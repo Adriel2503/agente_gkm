@@ -7,7 +7,7 @@ NO están expuestas directamente al orquestador.
 from langchain.tools import tool, ToolRuntime
 
 from ..services.busqueda_kia import buscar_vehiculo_rag, format_kia_resultados
-from ..services.citas_vitrix import actualizar_lead_cita
+from ..services.citas_vitrix import actualizar_lead_y_crear_task
 from ..logger import get_logger
 from ..metrics import track_tool_execution, record_tool_validation_error
 
@@ -120,7 +120,7 @@ async def agendar_cita(
 
     try:
         with track_tool_execution("agendar_cita"):
-            result = await actualizar_lead_cita(
+            result = await actualizar_lead_y_crear_task(
                 id_bitrix=id_bitrix,
                 financing_required=financing_required,
                 corporate_agreement=corporate_agreement,

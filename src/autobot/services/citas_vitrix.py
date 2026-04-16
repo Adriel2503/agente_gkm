@@ -1,10 +1,15 @@
 """
 Servicio de escritura en CRM Vitrix (sobre Bitrix24).
-Actualiza el lead con los campos del flujo comercial.
+Actualiza el lead con los campos del flujo comercial (action=edit) y en paralelo
+crea una task "Confirmar Cita - IA" (action=task) para el equipo humano.
 
 NOTA: Tool de ESCRITURA — sin retry, sin circuit breaker, sin cache.
 La idempotencia se delega al prompt del agente.
 """
+
+import asyncio
+from datetime import datetime
+from zoneinfo import ZoneInfo
 
 import httpx
 import unicodedata
@@ -17,8 +22,12 @@ from ..metrics import track_api_call
 logger = get_logger(__name__)
 
 _ACTION = "edit"
+_TASK_ACTION = "task"
+_TASK_TITLE = "Confirmar Cita - IA"
+_TASK_DESCRIPTION = "-"
+_TASK_DEADLINE_FMT = "%Y-%m-%d %H:%M:%S"
 _STATUS_BOT = "Sesión Bot Completada Exitosamente"
-_CITA_VALUE = "CITA -IA"
+_CITA_VALUE = _TASK_TITLE
 _DEFAULT_VALUE = "N.A"
 
 
@@ -184,10 +193,11 @@ async def actualizar_lead_cita(
     )
 
     logger.info(
-        "[VITRIX] POST edit lead — lead_id=%s campos=%s",
+        "[VITRIX:edit] INPUT — lead_id=%s campos=%s",
         lead_id,
         sorted(k for k in payload.keys() if k not in {"action", "api_key", "ID"}),
     )
+    logger.info("[VITRIX:edit] REQUEST — %s", payload)
 
     try:
         with track_api_call("vitrix_edit_lead"):
@@ -197,7 +207,7 @@ async def actualizar_lead_cita(
             except ValueError:
                 body_preview = response.text[:300]
                 logger.error(
-                    "[VITRIX] Respuesta no JSON — status=%s lead_id=%s body=%s",
+                    "[VITRIX:edit] RESPONSE no JSON — status=%s lead_id=%s body=%s",
                     response.status_code,
                     lead_id,
                     body_preview,
@@ -213,7 +223,7 @@ async def actualizar_lead_cita(
                     "time_ms": None,
                 }
     except httpx.TransportError as e:
-        logger.error("[VITRIX] TransportError — lead_id=%s err=%s", lead_id, e, exc_info=True)
+        logger.error("[VITRIX:edit] RESPONSE TransportError — lead_id=%s err=%s", lead_id, e, exc_info=True)
         return {
             "success": False,
             "lead_id": lead_id,
@@ -225,7 +235,7 @@ async def actualizar_lead_cita(
             "time_ms": None,
         }
     except Exception as e:
-        logger.error("[VITRIX] Error inesperado — lead_id=%s err=%s", lead_id, e, exc_info=True)
+        logger.error("[VITRIX:edit] RESPONSE Error inesperado — lead_id=%s err=%s", lead_id, e, exc_info=True)
         return {
             "success": False,
             "lead_id": lead_id,
@@ -258,27 +268,29 @@ async def actualizar_lead_cita(
 
     if success:
         logger.info(
-            "[VITRIX] Lead actualizado — lead_id=%s request_id=%s time_ms=%s",
+            "[VITRIX:edit] RESPONSE OK — lead_id=%s request_id=%s time_ms=%s body=%s",
             result["lead_id"],
             request_id,
             time_ms,
+            data,
         )
         return result
 
     if resolve_errors:
         logger.warning(
-            "[VITRIX] Validación rechazada — lead_id=%s request_id=%s errors=%s",
+            "[VITRIX:edit] RESPONSE validación rechazada — lead_id=%s request_id=%s errors=%s",
             result["lead_id"],
             request_id,
             resolve_errors,
         )
     else:
         logger.warning(
-            "[VITRIX] API rechazó — lead_id=%s request_id=%s error=%s status=%s",
+            "[VITRIX:edit] RESPONSE rechazo API — lead_id=%s request_id=%s error=%s status=%s body=%s",
             result["lead_id"],
             request_id,
             error_msg,
             response.status_code,
+            data,
         )
 
     if not error_msg and response.status_code >= 400:
@@ -287,4 +299,94 @@ async def actualizar_lead_cita(
     return result
 
 
-__all__ = ["actualizar_lead_cita"]
+async def crear_task_confirmar_cita(id_bitrix: str) -> dict:
+    """
+    POST a Vitrix (action=task) para crear la task 'Confirmar Cita - IA'.
+    Todos los campos salvo id_bitrix son hardcoded; la IA no aporta parámetros.
+    """
+    try:
+        lead_id = int(id_bitrix)
+    except (TypeError, ValueError):
+        logger.warning("[VITRIX:task] id_bitrix inválido — valor=%r", id_bitrix)
+        return {"success": False, "task_id": None, "error": "id_bitrix inválido"}
+
+    deadline = datetime.now(ZoneInfo(app_config.TIMEZONE)).strftime(_TASK_DEADLINE_FMT)
+    payload = {
+        "action": _TASK_ACTION,
+        "api_key": app_config.APIKEY_VITRIX,
+        "ID": lead_id,
+        "TITLE": _TASK_TITLE,
+        "DESCRIPTION": _TASK_DESCRIPTION,
+        "DEADLINE": deadline,
+    }
+
+    logger.info(
+        "[VITRIX:task] INPUT — lead_id=%s (hardcoded: title=%s description=%s deadline=%s)",
+        lead_id,
+        _TASK_TITLE,
+        _TASK_DESCRIPTION,
+        deadline,
+    )
+    logger.info("[VITRIX:task] REQUEST — %s", payload)
+
+    try:
+        with track_api_call("vitrix_crear_task"):
+            response = await get_client().post(app_config.VITRIX_API_URL, json=payload)
+            response.raise_for_status()
+            data = response.json()
+    except httpx.HTTPStatusError as e:
+        logger.error(
+            "[VITRIX:task] RESPONSE HTTP %s — lead_id=%s body=%s",
+            e.response.status_code,
+            lead_id,
+            e.response.text[:300],
+            exc_info=True,
+        )
+        return {"success": False, "task_id": None, "error": f"HTTP {e.response.status_code}"}
+    except httpx.TransportError as e:
+        logger.error("[VITRIX:task] RESPONSE TransportError — lead_id=%s err=%s", lead_id, e, exc_info=True)
+        return {"success": False, "task_id": None, "error": f"transport: {e}"}
+    except Exception as e:
+        logger.error("[VITRIX:task] RESPONSE Error inesperado — lead_id=%s err=%s", lead_id, e, exc_info=True)
+        return {"success": False, "task_id": None, "error": str(e)}
+
+    logger.info("[VITRIX:task] RESPONSE — lead_id=%s body=%s", lead_id, data)
+    success = bool(data.get("success"))
+    task_id = data.get("task_id")
+    if success:
+        return {"success": True, "task_id": task_id, "error": None}
+    return {"success": False, "task_id": task_id, "error": data.get("error") or "desconocido"}
+
+
+async def actualizar_lead_y_crear_task(
+    id_bitrix: str,
+    **edit_kwargs,
+) -> dict:
+    """
+    Ejecuta en paralelo action=edit (con los campos del LLM) y action=task (hardcoded).
+    Devuelve el resultado de edit para que el LLM reciba el mismo contrato de siempre.
+    El resultado de task solo queda en logs.
+    """
+    edit_result, task_result = await asyncio.gather(
+        actualizar_lead_cita(id_bitrix=id_bitrix, **edit_kwargs),
+        crear_task_confirmar_cita(id_bitrix=id_bitrix),
+        return_exceptions=True,
+    )
+
+    if isinstance(task_result, Exception):
+        logger.warning("[VITRIX:task] Excepción no capturada — %s", task_result)
+    elif not task_result.get("success"):
+        logger.warning("[VITRIX:task] Task no creada — %s", task_result)
+
+    if isinstance(edit_result, Exception):
+        logger.error("[VITRIX:edit] Excepción no capturada — %s", edit_result, exc_info=edit_result)
+        raise edit_result
+
+    return edit_result
+
+
+__all__ = [
+    "actualizar_lead_cita",
+    "crear_task_confirmar_cita",
+    "actualizar_lead_y_crear_task",
+]
