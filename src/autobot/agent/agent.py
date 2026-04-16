@@ -108,7 +108,7 @@ async def _get_agent(
                 correo=correo,
             )
 
-            # Crear agente con API moderna (response_format: reply + url opcional)
+            # Crear agente con API moderna (response_format: reply + urls)
             agent = create_agent(
                 model=get_model(),
                 tools=AGENT_TOOLS,
@@ -144,7 +144,7 @@ async def process_message(
     id_bitrix: str | None = None,
     sucursal: str | None = None,
     correo: str | None = None,
-) -> tuple[str, str | None]:
+) -> tuple[str, list[str]]:
     """
     Procesa un mensaje del cliente usando LangChain 1.2+ Agent.
 
@@ -160,11 +160,11 @@ async def process_message(
         config: Config opcional del bot.
 
     Returns:
-        Tupla (reply, url). url es None cuando no hay medio que adjuntar.
+        Tupla (reply, urls). urls es una lista vacía cuando no hay medios.
     """
     # Validaciones rápidas FUERA del lock (no tocan estado compartido)
     if not message or not message.strip():
-        return ("No recibí tu mensaje. ¿Podrías repetirlo?", None)
+        return ("No recibí tu mensaje. ¿Podrías repetirlo?", [])
 
     # Comandos del sistema (interceptados antes del lock y del agente)
     _cmd = message.strip().lower()
@@ -172,11 +172,11 @@ async def process_message(
         if phone:
             await get_checkpointer().adelete_thread(phone)
         logger.info("[CMD] /clear - Session: %s | Historial borrado", phone)
-        return ("Historial limpiado. ¿En qué puedo ayudarte?", None)
+        return ("Historial limpiado. ¿En qué puedo ayudarte?", [])
 
     if _cmd == "/restart":
         logger.warning("[CMD] /restart - Session: %s | Comando reservado, sin acción", phone)
-        return ("Este comando está reservado para administradores.", None)
+        return ("Este comando está reservado para administradores.", [])
 
     if not phone:
         raise ValueError("phone es requerido")
@@ -205,7 +205,7 @@ async def process_message(
         except Exception as e:
             logger.error("[AGENT] Error creando agent: %s", e, exc_info=True)
             record_chat_error("agent_creation_error")
-            return ("Disculpa, tuve un problema de configuración. ¿Podrías intentar nuevamente?", None)
+            return ("Disculpa, tuve un problema de configuración. ¿Podrías intentar nuevamente?", [])
 
         agent_context = _prepare_agent_context(id_empresa, config, phone, id_bitrix)
 
@@ -235,15 +235,27 @@ async def process_message(
 
             structured = result.get("structured_response")
             if isinstance(structured, CitaStructuredResponse):
-                if structured.reply is None:
+                reply = ""
+                urls: list[str] = []
+                structured_urls = getattr(structured, "urls", None)
+                if isinstance(structured_urls, list):
+                    for item in structured_urls:
+                        if item is None:
+                            continue
+                        cleaned = str(item).strip()
+                        if cleaned:
+                            urls.append(cleaned)
+                raw_reply = structured.reply
+                if raw_reply is None:
                     logger.warning("[AGENT] structured.reply es None - Session: %s", phone)
-                    reply = "No recibí respuesta del asistente, por favor intenta nuevamente."
-                elif structured.reply == "":
-                    logger.warning("[AGENT] structured.reply es string vacío - Session: %s", phone)
-                    reply = "El asistente envió una respuesta vacía, por favor intenta nuevamente."
+                elif isinstance(raw_reply, str):
+                    reply = raw_reply.strip()
                 else:
-                    reply = structured.reply
-                url = structured.url if (structured.url and structured.url.strip()) else None
+                    reply = str(raw_reply).strip()
+
+                if not reply and not urls:
+                    logger.warning("[AGENT] structured.reply vacío y sin urls - Session: %s", phone)
+                    reply = "El asistente envió una respuesta vacía, por favor intenta nuevamente."
             else:
                 messages = result.get("messages", [])
                 last_message = messages[-1] if messages else None
@@ -260,7 +272,7 @@ async def process_message(
                     reply = raw_content
                 else:
                     reply = "El asistente respondió en un formato inesperado, por favor intenta nuevamente."
-                url = None
+                urls = []
 
             # Extraer tokens de todos los AIMessage
             _input_tokens = 0
@@ -275,16 +287,16 @@ async def process_message(
                 logger.info("[AGENT] Tokens — input=%s, output=%s, total=%s, empresa=%s",
                             _input_tokens, _output_tokens, _input_tokens + _output_tokens, _empresa_id)
 
-            logger.debug("[AGENT] Respuesta generada: %s...", (reply[:200], url))
+            logger.debug("[AGENT] Respuesta generada: %s...", (reply[:200], urls))
 
         except tuple(_OPENAI_ERRORS.keys()) as e:
             log_level, error_key, log_tag, user_msg = _OPENAI_ERRORS[type(e)]
             getattr(logger, log_level)("[AGENT][%s] Session: %s | %s", log_tag, phone, e)
             record_chat_error(error_key)
-            return (user_msg, None)
+            return (user_msg, [])
         except Exception as e:
             logger.error("[AGENT] Error inesperado (%s) - Session: %s | %s", type(e).__name__, phone, e, exc_info=True)
             record_chat_error("agent_execution_error")
-            return ("Disculpa, tuve un problema al procesar tu mensaje. ¿Podrías intentar nuevamente?", None)
+            return ("Disculpa, tuve un problema al procesar tu mensaje. ¿Podrías intentar nuevamente?", [])
 
-    return (reply, url)
+    return (reply, urls)

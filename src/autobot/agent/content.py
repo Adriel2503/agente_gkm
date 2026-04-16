@@ -8,15 +8,17 @@ from pydantic import BaseModel, Field
 
 
 class CitaStructuredResponse(BaseModel):
-    """Schema para response_format del agente. Siempre devuelve reply; url opcional."""
+    """Schema para response_format del agente. Siempre devuelve reply; urls opcional."""
 
     reply: str = Field(
         description="Respuesta al cliente que escribe. Nunca dejar vacío."
     )
-    url: str | None = Field(
-        default=None,
-        description="URL opcional de archivo adjunto. null si no aplica.",
+    urls: list[str] = Field(
+        default_factory=list,
+        description="Lista de URLs opcionales de archivos adjuntos. Vacía si no aplica.",
     )
+
+    model_config = {"extra": "ignore"}
 
 
 _IMAGE_URL_RE = re.compile(

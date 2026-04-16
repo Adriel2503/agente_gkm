@@ -73,15 +73,36 @@ class AckResponse(BaseModel):
 
 
 class ChatResponse(BaseModel):
-    """Payload enviado al callback con la respuesta del agente."""
+    """Payload enviado al callback con la respuesta del agente (message + urls)."""
     message: str
-    url: str | None = None
+    urls: list[str] = Field(default_factory=list)
     phone: str
     id_empresa: int
     id_chat: int
     phone_number_id: str
 
+    @field_validator("urls", mode="before")
+    @classmethod
+    def normalize_urls(cls, value: object) -> list[str]:
+        if value is None:
+            return []
+        if isinstance(value, str):
+            cleaned = value.strip()
+            return [cleaned] if cleaned else []
+        if isinstance(value, (list, tuple)):
+            normalized: list[str] = []
+            for item in value:
+                if item is None:
+                    continue
+                cleaned = str(item).strip()
+                if cleaned:
+                    normalized.append(cleaned)
+            return normalized
+        return value
+
+    model_config = {"extra": "ignore"}
+
 
 # Alias para documentación OpenAPI (callbacks)
 CallbackRequest = ChatResponse
-CallbackRequest.__doc__ = "Payload que el agente envía al CALLBACK_URL con la respuesta procesada."
+CallbackRequest.__doc__ = "Payload que el agente envía al CALLBACK_URL con la respuesta procesada (message + urls)."

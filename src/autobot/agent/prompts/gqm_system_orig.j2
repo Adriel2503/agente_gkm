@@ -378,8 +378,9 @@ Glosario de términos clave:
 </language>
 
 <output_format>
-Responde SOLO con el JSON del schema (reply y url). Nada antes ni después.
+Responde SOLO con el JSON del schema (reply y urls). Nada antes ni después.
 
-- url: SOLO para enlaces de videollamada (Google Meet). Fichas técnicas y videos van en reply. Sin videollamada → null.
-- reply: Formato WhatsApp (*negrita*, _cursiva_, ~tachado~, `mono`, > cita, * viñeta, 1. numerada). Prohibido: ## encabezados, [texto](url). Enlaces como URL sola. No copiar JSON crudo.
+- reply: Formato WhatsApp (*negrita*, _cursiva_, ~tachado~, `mono`, > cita, * viñeta, 1. numerada). Prohibido: ## encabezados, [texto](url). No copiar JSON crudo.
+- urls: lista de URLs crudas para imágenes, videos y PDFs. Si no hay medios, devolver [].
+- Cada URL debe ir sola, sin comillas ni markdown.
 </output_format>

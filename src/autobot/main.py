@@ -118,7 +118,7 @@ async def _process_and_callback(req: ChatRequest) -> None:
     _http_status = "success"
 
     try:
-        reply, url = await asyncio.wait_for(
+        reply, urls = await asyncio.wait_for(
             process_message(
                 message=req.question,
                 phone=req.phone,
@@ -138,13 +138,13 @@ async def _process_and_callback(req: ChatRequest) -> None:
     except asyncio.TimeoutError:
         _http_status = "timeout"
         reply = f"La solicitud tardó más de {app_config.CHAT_TIMEOUT}s. Por favor, intenta de nuevo."
-        url = None
+        urls = []
         logger.error("[HTTP] Timeout en process_message (CHAT_TIMEOUT=%s)", app_config.CHAT_TIMEOUT)
 
     except ValueError as e:
         _http_status = "error"
         reply = f"Error de configuración: {str(e)}"
-        url = None
+        urls = []
         logger.error("[HTTP] %s", reply)
 
     except asyncio.CancelledError:
@@ -154,7 +154,7 @@ async def _process_and_callback(req: ChatRequest) -> None:
     except Exception as e:
         _http_status = "error"
         reply = f"Error procesando mensaje: {str(e)}"
-        url = None
+        urls = []
         logger.error("[HTTP] %s", reply, exc_info=True)
 
     finally:
@@ -167,7 +167,7 @@ async def _process_and_callback(req: ChatRequest) -> None:
         logger.error("[CALLBACK] CALLBACK_URL no configurada - Session: %s, respuesta descartada", req.phone)
         return
 
-    payload = ChatResponse(message=reply, url=url, phone=req.phone, id_empresa=req.id_empresa, id_chat=req.id_chat, phone_number_id=req.phone_number_id)
+    payload = ChatResponse(message=reply, urls=urls, phone=req.phone, id_empresa=req.id_empresa, id_chat=req.id_chat, phone_number_id=req.phone_number_id)
     callback_data = payload.model_dump()
     logger.info("[CALLBACK] JSON salida:\n%s", json.dumps(callback_data, indent=2, ensure_ascii=False))
     try:

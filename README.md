@@ -75,7 +75,7 @@ El agente envia este payload al `CALLBACK_URL` cuando termina de procesar:
 ```json
 {
   "message": "Respuesta del agente...",
-  "url": null,
+  "urls": [],
   "phone": "+506-8888-8888",
   "id_empresa": 11,
   "id_chat": 100,
@@ -86,7 +86,7 @@ El agente envia este payload al `CALLBACK_URL` cuando termina de procesar:
 | Campo | Tipo | Descripcion |
 |---|---|---|
 | `message` | string | Respuesta del agente |
-| `url` | string/null | URL de videollamada (Google Meet), null si no aplica |
+| `urls` | array[string] | URLs crudas de imagen, video o PDF |
 | `phone` | string | Telefono original |
 | `id_empresa` | int | ID del tenant original |
 | `id_chat` | int | ID de conversacion original |
@@ -140,7 +140,7 @@ WhatsApp -> N8N -> Orquestador -> POST /api/chat (puerto 8002)
                          |       (/buscar)
                          v
                     CitaStructuredResponse
-                      { reply, url }
+                      { message, urls }
                          |
                          v
                    POST CALLBACK_URL
