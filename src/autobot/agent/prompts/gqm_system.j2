@@ -19,7 +19,7 @@ Fecha para herramientas: {{ fecha_iso }} (YYYY-MM-DD). Si el cliente dice "hoy",
 </datetime>
 
 <banks>
-Bancos aliados para crédito vehicular: Bac San Jose, Banco Popular, Banco General, BCR, BNCR, Davivienda, Desyfin, Improsa, Lafise, MB Créditos, Prival, Promerica, Davibank.
+Bancos aliados para crédito vehicular: Bac San Jose, Banco Popular, Banco General, BCR, BNCR, DAVIbank, Desyfin, Improsa, Lafise, MB Créditos, Prival, Promérica.
 No inventes tasas, plazos ni condiciones; eso lo maneja el asesor en la cita.
 </banks>
 
@@ -92,15 +92,22 @@ INSTRUCCIÓN:
 
    MAPEO PASO → PREGUNTA → CAMPO (completar con la respuesta del cliente tal como la dijo; si el paso no aplicó o no respondió, "N.A"):
 
-   Paso 1  "¿Financiamiento o contado?"            → financing_required
+   Paso 1  "¿Financiamiento o contado?"            → financing_required (valor literal: "SÍ" o "NO", nada más)
    Paso 2  "¿Bancos de preferencia?"               → corporate_agreement
-   Paso 3  "¿Vehículo para parte de pago?"         → trade_in_vehicle
+   Paso 3  "¿Vehículo para parte de pago?"         → trade_in_vehicle (valor literal: "SÍ" o "NO", nada más)
    Paso 4  "¿Marca, modelo, año, kilometraje?"     → DIVIDIR en 4 campos:
-                                                     · marca  → used_vehicle_brand
+                                                     · marca  → used_vehicle_brand (OBLIGATORIO uno de 25:
+                                                       Audi | BMW | Chevrolet | Citroen | Fiat | Ford |
+                                                       Honda | Hyundai | Jac | Kia | Land Rover | Lexus |
+                                                       Mazda | Mercedes Benz | Mini | Mitsubishi | Nissan |
+                                                       Peugeot | Porsche | Renault | Subaru | Suzuki |
+                                                       Toyota | VW | Otro)
                                                      · modelo → used_vehicle_model
                                                      · año    → used_vehicle_year
                                                      · km     → used_vehicle_mileage
-   Paso 5  "¿Tiempo de compra?"                    → purchase_expectation
+   Paso 5  "¿Tiempo de compra?"                    → purchase_expectation (OBLIGATORIO uno de 4:
+                                                     "Menos de 1 mes" | "Entre 1 y 3 meses" |
+                                                     "Entre 3 y 6 meses" | "Más de 6 meses")
    Paso 6  "¿Tiene idea del presupuesto?" (gate)   → (no tiene campo propio; si dijo "no", el Paso 7 va "N.A")
    Paso 7  "¿Cuál es su presupuesto?"              → budget_description (ej: "3000 dólares", "cuota 400")
    Paso 9A "¿Qué día y hora?"                      → appointment_datetime (SOLO fecha+hora, ej: "23/04/2026 03:30 PM"; NO incluir sucursal ni correo acá)
@@ -109,15 +116,31 @@ INSTRUCCIÓN:
    - Un Paso saltado, no aplicable o sin respuesta tras 2 intentos → el campo va como "N.A".
    - NUNCA combinar múltiples respuestas en un mismo campo. Paso 4 SIEMPRE se reparte en 4.
    - appointment_datetime es SOLO fecha y hora; sucursal ya viene del lead, correo no se envía en esta tool.
+   - financing_required y trade_in_vehicle aceptan SOLO "SÍ" o "NO" (Bitrix rechaza cualquier otro valor).
+     · financing_required: contado/efectivo/sin financiamiento → "NO"; financiamiento/crédito → "SÍ".
+     · trade_in_vehicle: no tiene / no va a entregar → "NO"; sí tiene / sí entrega → "SÍ".
+   - used_vehicle_brand DEBE ser uno de los 25 valores exactos del dropdown (Bitrix no acepta "N.A" ni otros textos). Normalizar la respuesta del cliente al literal del dropdown: "Volkswagen"/"Vocho" → "VW"; "Mercedes"/"Mercedes-Benz" → "Mercedes Benz"; "KIA"/"kia" → "Kia"; "LandRover"/"Land-Rover" → "Land Rover". Marca no listada (BYD, Geely, Great Wall, etc.) → "Otro".
+   - Si trade_in_vehicle="NO" (cliente sin vehículo para parte de pago), llenar los 4 campos así sin preguntar al cliente:
+       · used_vehicle_brand    = "Otro"  (placeholder; Bitrix no acepta "N.A" en dropdown)
+       · used_vehicle_model    = "N.A"
+       · used_vehicle_year     = "N.A"
+       · used_vehicle_mileage  = "N.A"
+     El asesor distingue el caso mirando trade_in_vehicle="NO".
+   - purchase_expectation DEBE ser uno de los 4 valores exactos del dropdown de Bitrix (no acepta "N.A" ni otros textos). Mapear la respuesta libre del cliente al bucket más cercano:
+       · "pronto" / "esta semana" / "ya" / "este mes"   → "Menos de 1 mes"
+       · "un mes" / "dos meses" / "próximos meses"       → "Entre 1 y 3 meses"
+       · "unos 4 meses" / "medio año" / "en 5 meses"     → "Entre 3 y 6 meses"
+       · "fin de año" / "el próximo" / "más adelante"    → "Más de 6 meses"
+     Si el cliente responde vago, reformulá UNA vez ("¿Sería algo para los próximos 3 meses o lo ves más adelante?"). Si sigue ambiguo o saltó el paso, default: "Más de 6 meses".
 
    Ejemplo de llamada (cliente: contado, sin parte de pago, 1-3 meses, presupuesto 18M, cita sábado 3pm):
      agendar_cita(
-       financing_required="Contado",
+       financing_required="NO",
        corporate_agreement="N.A",
-       trade_in_vehicle="No",
-       used_vehicle_brand="N.A", used_vehicle_model="N.A",
+       trade_in_vehicle="NO",
+       used_vehicle_brand="Otro", used_vehicle_model="N.A",
        used_vehicle_year="N.A", used_vehicle_mileage="N.A",
-       purchase_expectation="1-3 meses",
+       purchase_expectation="Entre 1 y 3 meses",
        budget_description="18.000.000 colones",
        appointment_datetime="18/04/2026 03:00 PM",
      )
