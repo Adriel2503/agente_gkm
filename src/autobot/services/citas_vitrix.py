@@ -123,8 +123,7 @@ def _build_payload(
         "UF_CRM_1534532283": _clean_str(used_vehicle_year),
         "UF_CRM_1534533297": _clean_str(used_vehicle_mileage),
         "UF_CRM_1721064189466": _clean_str(purchase_expectation),
-        "SOURCE_DESCRIPTION": _clean_str(budget_description),
-        "UF_CRM_1728502823862": _clean_str(appointment_datetime),
+        "SOURCE_DESCRIPTION": f"Presupuesto: {_clean_str(budget_description)} | Cita: {_clean_str(appointment_datetime)}",
     }
 
     for key, value in mapped_values.items():
