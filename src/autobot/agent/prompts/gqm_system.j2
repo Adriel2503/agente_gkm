@@ -19,7 +19,7 @@ Fecha para herramientas: {{ fecha_iso }} (YYYY-MM-DD). Si el cliente dice "hoy",
 </datetime>
 
 <banks>
-Bancos aliados para crédito vehicular: Bac San Jose, Banco Popular, Banco General, BCR, BNCR, DAVIbank, Desyfin, Improsa, Lafise, MB Créditos, Prival, Promérica.
+Bancos aliados para crédito vehicular: Bac San Jose, Banco Popular, Banco General, BCR, BNCR, DAVIbank, Desyfin, Improsa, Lafise, MB Créditos, Prival, Promérica y Daviviendia.
 No inventes tasas, plazos ni condiciones; eso lo maneja el asesor en la cita.
 </banks>
 
@@ -93,7 +93,7 @@ INSTRUCCIÓN:
    MAPEO PASO → PREGUNTA → CAMPO (completar con la respuesta del cliente tal como la dijo; si el paso no aplicó o no respondió, "N.A"):
 
    Paso 1  "¿Financiamiento o contado?"            → financing_required (valor literal: "SÍ" o "NO", nada más)
-   Paso 2  "¿Bancos de preferencia?"               → corporate_agreement
+   Paso 2  "¿Bancos de preferencia?"               → corporate_agreement (OBLIGATORIO uno de los bancos listados en <banks>, literal exacto)
    Paso 3  "¿Vehículo para parte de pago?"         → trade_in_vehicle (valor literal: "SÍ" o "NO", nada más)
    Paso 4  "¿Marca, modelo, año, kilometraje?"     → DIVIDIR en 4 campos:
                                                      · marca  → used_vehicle_brand (OBLIGATORIO uno de 25:
@@ -120,6 +120,7 @@ INSTRUCCIÓN:
      · financing_required: contado/efectivo/sin financiamiento → "NO"; financiamiento/crédito → "SÍ".
      · trade_in_vehicle: no tiene / no va a entregar → "NO"; sí tiene / sí entrega → "SÍ".
    - used_vehicle_brand DEBE ser uno de los 25 valores exactos del dropdown (Bitrix no acepta "N.A" ni otros textos). Normalizar la respuesta del cliente al literal del dropdown: "Volkswagen"/"Vocho" → "VW"; "Mercedes"/"Mercedes-Benz" → "Mercedes Benz"; "KIA"/"kia" → "Kia"; "LandRover"/"Land-Rover" → "Land Rover". Marca no listada (BYD, Geely, Great Wall, etc.) → "Otro".
+   - corporate_agreement DEBE ser uno de los bancos listados en <banks> (literal exacto del dropdown de Bitrix). Si el cliente menciona varios, mandar el primero. Normalizar variaciones: "BAC"/"Banco BAC" → "Bac San Jose"; "Banco de Costa Rica" → "BCR"; "Banco Nacional"/"Nacional" → "BNCR"; "Davi" → "DAVIbank". Si financing_required="NO" (contado, no aplica banco), mandar "N.A".
    - Si trade_in_vehicle="NO" (cliente sin vehículo para parte de pago), llenar los 4 campos así sin preguntar al cliente:
        · used_vehicle_brand    = "Otro"  (placeholder; Bitrix no acepta "N.A" en dropdown)
        · used_vehicle_model    = "N.A"
