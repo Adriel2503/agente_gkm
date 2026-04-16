@@ -7,7 +7,7 @@ NO están expuestas directamente al orquestador.
 from langchain.tools import tool, ToolRuntime
 
 from ..services.busqueda_kia import buscar_vehiculo_rag, format_kia_resultados
-from ..services.citas_vitrix import actualizar_lead_y_crear_task
+from ..services.citas_vitrix import actualizar_lead_y_crear_task, marcar_lead_desistido
 from ..logger import get_logger
 from ..metrics import track_tool_execution, record_tool_validation_error
 
@@ -158,7 +158,40 @@ async def agendar_cita(
     return "No pude actualizar el lead en este momento. Intenta nuevamente."
 
 
-# Lista de todas las tools disponibles para el agente
-AGENT_TOOLS = [buscar_vehiculo, agendar_cita]
+@tool
+async def marcar_desistido(runtime: ToolRuntime = None) -> str:
+    """
+    Marca el lead como 'Desistido' en el CRM. Llamar SOLO cuando el cliente:
+      - No responde tras 2 intentos de reformular una pregunta clave.
+      - Rechaza explícitamente agendar cita Y callback (Paso 8).
+      - Pide no ser contactado más ("no me molesten", "quítenme de la lista").
+    NO requiere parámetros del cliente; todo el payload es interno.
+    Idempotente: una sola llamada por conversación.
+    """
+    logger.info("[marcar_desistido] Tool en uso: marcar_desistido")
 
-__all__ = ["buscar_vehiculo", "agendar_cita", "AGENT_TOOLS"]
+    id_bitrix = getattr(runtime.context, "id_bitrix", None) if runtime else None
+    if not id_bitrix:
+        logger.warning("[marcar_desistido] id_bitrix ausente en el contexto")
+        return "No puedo marcar el lead en este momento."
+
+    try:
+        with track_tool_execution("marcar_desistido"):
+            result = await marcar_lead_desistido(id_bitrix=id_bitrix)
+    except Exception as e:
+        logger.error("[marcar_desistido] Error inesperado: %s", e, exc_info=True)
+        return "No pude marcar el lead en este momento. Intenta nuevamente."
+
+    if result["success"]:
+        return "Lead marcado como desistido."
+
+    error_msg = result.get("error")
+    if isinstance(error_msg, str) and error_msg.strip():
+        return f"No pude marcar el lead: {error_msg.strip()}."
+    return "No pude marcar el lead en este momento."
+
+
+# Lista de todas las tools disponibles para el agente
+AGENT_TOOLS = [buscar_vehiculo, agendar_cita, marcar_desistido]
+
+__all__ = ["buscar_vehiculo", "agendar_cita", "marcar_desistido", "AGENT_TOOLS"]

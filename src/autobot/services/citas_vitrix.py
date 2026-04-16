@@ -29,6 +29,8 @@ _TASK_DEADLINE_FMT = "%Y-%m-%d %H:%M:%S"
 _STATUS_BOT = "Sesión Bot Completada Exitosamente"
 _CITA_VALUE = _TASK_TITLE
 _DEFAULT_VALUE = "N.A"
+_DESISTIDO_REASON = "No respondió a la IA"
+_DESISTIDO_STATUS_ID = "Desistido"
 
 
 def _clean_str(value: str | None) -> str | None:
@@ -116,7 +118,7 @@ def _build_payload(
         "UF_CRM_1653688826": _normalize_yes_no(financing_required),
         "UF_CRM_1774975288": _clean_str(corporate_agreement),
         "UF_CRM_1653599755": _normalize_yes_no(trade_in_vehicle),
-        "UF_CRM_1534533239": _clean_str(used_vehicle_brand),
+        "UF_CRM_1653605302623": _clean_str(used_vehicle_brand),
         "UF_CRM_1653605318164": _clean_str(used_vehicle_model),
         "UF_CRM_1534532283": _clean_str(used_vehicle_year),
         "UF_CRM_1534533297": _clean_str(used_vehicle_mileage),
@@ -385,8 +387,78 @@ async def actualizar_lead_y_crear_task(
     return edit_result
 
 
+async def marcar_lead_desistido(id_bitrix: str) -> dict:
+    """
+    POST directo a Vitrix (action=edit) para marcar el lead como desistido.
+    Payload 100% hardcoded salvo id_bitrix.
+    """
+    try:
+        lead_id = int(id_bitrix)
+    except (TypeError, ValueError):
+        logger.warning("[VITRIX:desistido] id_bitrix inválido — valor=%r", id_bitrix)
+        return {
+            "success": False,
+            "lead_id": None,
+            "request_id": None,
+            "error": "id_bitrix inválido",
+        }
+
+    payload = {
+        "action": _ACTION,
+        "api_key": app_config.APIKEY_VITRIX,
+        "ID": lead_id,
+        "UF_CRM_1774974891": _STATUS_BOT,
+        "UF_CRM_1559082118": _DESISTIDO_REASON,
+        "STATUS_ID": _DESISTIDO_STATUS_ID,
+    }
+
+    logger.info("[VITRIX:desistido] REQUEST — %s", payload)
+
+    try:
+        with track_api_call("vitrix_desistido"):
+            response = await get_client().post(app_config.VITRIX_API_URL, json=payload)
+            try:
+                data = response.json()
+            except ValueError:
+                body_preview = response.text[:300]
+                logger.error(
+                    "[VITRIX:desistido] RESPONSE no JSON — status=%s lead_id=%s body=%s",
+                    response.status_code,
+                    lead_id,
+                    body_preview,
+                )
+                return {
+                    "success": False,
+                    "lead_id": lead_id,
+                    "request_id": None,
+                    "error": f"Respuesta no JSON del API (HTTP {response.status_code})",
+                }
+    except httpx.TransportError as e:
+        logger.error("[VITRIX:desistido] TransportError — lead_id=%s err=%s", lead_id, e, exc_info=True)
+        return {"success": False, "lead_id": lead_id, "request_id": None, "error": f"transport: {e}"}
+    except Exception as e:
+        logger.error("[VITRIX:desistido] Error inesperado — lead_id=%s err=%s", lead_id, e, exc_info=True)
+        return {"success": False, "lead_id": lead_id, "request_id": None, "error": str(e)}
+
+    success = bool(data.get("success"))
+    result = {
+        "success": success,
+        "lead_id": data.get("lead_id", lead_id),
+        "request_id": data.get("request_id"),
+        "error": data.get("error"),
+    }
+
+    if success:
+        logger.info("[VITRIX:desistido] RESPONSE OK — lead_id=%s body=%s", result["lead_id"], data)
+    else:
+        logger.warning("[VITRIX:desistido] RESPONSE rechazo — lead_id=%s body=%s", result["lead_id"], data)
+
+    return result
+
+
 __all__ = [
     "actualizar_lead_cita",
     "crear_task_confirmar_cita",
     "actualizar_lead_y_crear_task",
+    "marcar_lead_desistido",
 ]

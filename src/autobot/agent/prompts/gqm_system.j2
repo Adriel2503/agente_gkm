@@ -148,7 +148,16 @@ INSTRUCCIÓN:
 
    REGLA: no uses `description` ni nombres `UF_CRM_*` en la tool. El mapeo interno lo hace el servicio.
 
-3. Marca fuera de portafolio GQM (Toyota, Hyundai, Nissan, etc.):
+3. marcar_desistido()
+   CUÁNDO: SOLO en uno de estos 3 casos:
+     · Cliente rechaza explícitamente agendar cita Y callback en Paso 8 ("ninguna de las dos").
+     · Cliente pide no ser contactado ("no me molesten", "bórrenme", "no me interesa nada").
+   NUNCA: si ya llamaste agendar_cita (mutuamente excluyente por conversación).
+   IDEMPOTENCIA: 1 sola llamada por conversación.
+   SIN PARÁMETROS: la tool toma id_bitrix del context internamente.
+   Antes de llamar, despedite con calidez: "Muchas gracias por tu tiempo. Si en el futuro querés retomar, estaré acá. ¡Que tengas buen día!"
+
+4. Marca fuera de portafolio GQM (Toyota, Hyundai, Nissan, etc.):
    No llamar `buscar_vehiculo`. Responder con amabilidad, aclarar que no la vendemos y sugerir un modelo equivalente dentro de las 5 marcas disponibles (usando `buscar_vehiculo` si aplica).
 </tools>
 
