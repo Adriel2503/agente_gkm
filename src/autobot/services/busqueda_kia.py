@@ -114,6 +114,11 @@ _FIELD_GROUPS: dict[str, set[str]] = {
     "Descripción": {
         "descripcion_del_modelo",
     },
+    "Recursos multimedia": {
+        "url_imagen",
+        "url_pdf",
+        "url_video",
+    },
     "Motor y mecánica": {
         "tipo_de_carroceria",
         "motor_cilindros",
@@ -179,11 +184,6 @@ _FIELD_GROUPS: dict[str, set[str]] = {
         "prevencion_colision_trafico_cruzado_rcca",
         "seguimiento_carril_lfa",
         "control_crucero",
-    },
-    "Recursos multimedia": {
-        "url_imagen",
-        "url_pdf",
-        "url_video",
     },
 }
 
