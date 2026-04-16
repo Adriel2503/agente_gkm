@@ -92,7 +92,7 @@ async def buscar_vehiculo_rag(
 
 
 # Campos que van en el encabezado (no se repiten en los grupos).
-# La función SQL devuelve 62 columnas; el objetivo es mostrar las claves
+# La función SQL devuelve 66 columnas; el objetivo es mostrar las claves
 # principales arriba y el resto agrupado de forma legible para el LLM.
 _HEADER_FIELDS: set[str] = {
     "marca",
@@ -126,36 +126,47 @@ _FIELD_GROUPS: dict[str, set[str]] = {
         "tamano_aros",
         "dimensiones",
         "traccion",
+        "suspension_delanteros",
+        "suspension_posteriores",
     },
     "Mantenimiento": {
         "paquete_de_mantenimiento_prepago",
         "primer_servicio_de_mantenimiento",
         "frecuencia_de_mantenimiento",
     },
-    "Equipamiento": {
-        "sunroof",
-        "capacidad_de_la_maletera",
-        "espejos_electricos",
+    "Confort": {
         "aire_acondicionado",
-        "radio_tactil",
-        "camara_de_retroceso",
-        "alzavidrios_electricos",
+        "asientos_electricos",
+        "material_de_asientos",
+        "numero_de_asientos",
         "volante_forrado_en_cuero",
-        "sensores_de_estacionamiento",
+        "sunroof",
+        "cargador_inalambrico",
+        "freno_de_estacionamiento",
+    },
+    "Iluminación": {
         "faros_delanteros_led",
         "faros_posteriores_led",
         "faros_neblineros",
+    },
+    "Tecnología": {
+        "radio_tactil",
+        "conectividad_de_la_radio",
         "panel_de_instrumentos",
         "tipo_de_llave",
-        "conectividad_de_la_radio",
-        "llanta_de_repuesto",
-        "cargador_inalambrico",
-        "material_de_asientos",
-        "maletero_inteligente",
-        "freno_de_estacionamiento",
-        "numero_de_asientos",
+        "camara_de_retroceso",
+        "sensores_de_estacionamiento",
         "monitor_de_punto_ciego",
-        "asientos_electricos",
+    },
+    "Capacidad y práctico": {
+        "capacidad_de_la_maletera",
+        "maletero_inteligente",
+        "alzavidrios_electricos",
+        "espejos_electricos",
+        "llanta_de_repuesto",
+        "rieles_en_el_techo",
+    },
+    "EV": {
         "autonomia_ev",
     },
     "ADAS y seguridad": {
@@ -168,9 +179,6 @@ _FIELD_GROUPS: dict[str, set[str]] = {
         "prevencion_colision_trafico_cruzado_rcca",
         "seguimiento_carril_lfa",
         "control_crucero",
-        "rieles_en_el_techo",
-        "suspension_delanteros",
-        "suspension_posteriores",
     },
     "Recursos multimedia": {
         "url_imagen",
@@ -180,20 +188,12 @@ _FIELD_GROUPS: dict[str, set[str]] = {
 }
 
 _FIELD_LABELS: dict[str, str] = {
-    "marca": "Marca",
-    "modelo": "Modelo",
     "introduccion_de_modelo": "Introducción del modelo",
     "caracteristicas_generales": "Características generales",
     "colores_disponibles": "Colores disponibles",
-    "variante": "Variante",
-    "gama": "Gama",
-    "detalle_de_version": "Detalle de versión",
-    "ano_modelo": "Año modelo",
-    "precio_lista_usd": "Precio lista USD",
     "tipo_de_carroceria": "Tipo de carrocería",
     "motor_cilindros": "Motor cilindros",
     "cilindrada_combustible_tipo": "Cilindrada / combustible / tipo",
-    "tipo_de_gama": "Tipo de gama",
     "descripcion_del_modelo": "Descripción del modelo",
     "transmision": "Transmisión",
     "garantia": "Garantía",
@@ -270,26 +270,26 @@ def format_kia_resultados(resultados: list[dict]) -> str:
 
     lineas = []
     for r in resultados:
-        # Encabezado: marca + modelo + año + versión + precio
+        # Encabezado: marca + modelo + año
         marca = r.get("marca", "N/A")
         modelo = r.get("modelo", "N/A")
         anio = r.get("ano_modelo", "")
         lineas.append(f"=== {marca} {modelo} {anio} ===")
 
-        # Subencabezado: variante | gama | detalle | tipo | precio
+        # Subencabezado con labels
         sub = []
         if r.get("variante"):
-            sub.append(str(r["variante"]))
+            sub.append(f"Variante: {r['variante']}")
         if r.get("gama"):
-            sub.append(str(r["gama"]))
+            sub.append(f"Gama: {r['gama']}")
         if r.get("detalle_de_version"):
-            sub.append(str(r["detalle_de_version"]))
+            sub.append(f"Detalle: {r['detalle_de_version']}")
         if r.get("tipo_de_gama"):
-            sub.append(str(r["tipo_de_gama"]))
-        if r.get("precio_lista_usd"):
-            sub.append(str(r["precio_lista_usd"]))
+            sub.append(f"Tipo de gama: {r['tipo_de_gama']}")
         if sub:
-            lineas.append(" | ".join(sub))
+            lineas.append("  " + " | ".join(sub))
+        if r.get("precio_lista_usd"):
+            lineas.append(f"  Precio lista USD: {r['precio_lista_usd']}")
 
         # Grupos de campos
         for group_name, fields in _FIELD_GROUPS.items():
