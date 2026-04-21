@@ -23,7 +23,7 @@ logger = get_logger(__name__)
 
 _ACTION = "edit"
 _TASK_ACTION = "task"
-_TASK_TITLE = "Confirmar Cita - IA"
+_TASK_TITLE = "Llamar - confirmar cita IA"
 _TASK_DESCRIPTION = "-"
 _TASK_DEADLINE_FMT = "%Y-%m-%d %H:%M:%S"
 _STATUS_BOT = "Sesión Bot Completada Exitosamente"
@@ -112,6 +112,7 @@ def _build_payload(
         "ID": lead_id,
         "UF_CRM_1774974891": _STATUS_BOT,
         "UF_CRM_1728502747862": _CITA_VALUE,
+        "STATUS_ID": "Asignado a Vendedor (Sin Contacto)",
     }
 
     mapped_values: dict[str, object] = {
@@ -364,24 +365,19 @@ async def actualizar_lead_y_crear_task(
     **edit_kwargs,
 ) -> dict:
     """
-    Ejecuta en paralelo action=edit (con los campos del LLM) y action=task (hardcoded).
-    Devuelve el resultado de edit para que el LLM reciba el mismo contrato de siempre.
-    El resultado de task solo queda en logs.
+    Ejecuta action=edit y luego, 5 segundos después en background, action=task.
+    El delay garantiza que Vitrix haya procesado el edit antes de recibir la task.
+    Devuelve el resultado de edit inmediatamente; la task corre fire-and-forget.
     """
-    edit_result, task_result = await asyncio.gather(
-        actualizar_lead_cita(id_bitrix=id_bitrix, **edit_kwargs),
-        crear_task_confirmar_cita(id_bitrix=id_bitrix),
-        return_exceptions=True,
-    )
+    edit_result = await actualizar_lead_cita(id_bitrix=id_bitrix, **edit_kwargs)
 
-    if isinstance(task_result, Exception):
-        logger.warning("[VITRIX:task] Excepción no capturada — %s", task_result)
-    elif not task_result.get("success"):
-        logger.warning("[VITRIX:task] Task no creada — %s", task_result)
+    async def _delayed_task():
+        await asyncio.sleep(5)
+        task_result = await crear_task_confirmar_cita(id_bitrix=id_bitrix)
+        if not task_result.get("success"):
+            logger.warning("[VITRIX:task] Task no creada — %s", task_result)
 
-    if isinstance(edit_result, Exception):
-        logger.error("[VITRIX:edit] Excepción no capturada — %s", edit_result, exc_info=edit_result)
-        raise edit_result
+    asyncio.create_task(_delayed_task())
 
     return edit_result
 
