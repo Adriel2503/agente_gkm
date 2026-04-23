@@ -80,6 +80,7 @@ class ChatResponse(BaseModel):
     id_empresa: int
     id_chat: int
     phone_number_id: str
+    event: str | None = None  # "cita_agendada" | "callback_solicitado" | "desistido" | None
 
     @field_validator("urls", mode="before")
     @classmethod

@@ -144,7 +144,7 @@ async def process_message(
     id_bitrix: str | None = None,
     sucursal: str | None = None,
     correo: str | None = None,
-) -> tuple[str, list[str]]:
+) -> tuple[str, list[str], str | None]:
     """
     Procesa un mensaje del cliente usando LangChain 1.2+ Agent.
 
@@ -164,7 +164,7 @@ async def process_message(
     """
     # Validaciones rápidas FUERA del lock (no tocan estado compartido)
     if not message or not message.strip():
-        return ("No recibí tu mensaje. ¿Podrías repetirlo?", [])
+        return ("No recibí tu mensaje. ¿Podrías repetirlo?", [], None)
 
     # Comandos del sistema (interceptados antes del lock y del agente)
     _cmd = message.strip().lower()
@@ -172,11 +172,11 @@ async def process_message(
         if phone:
             await get_checkpointer().adelete_thread(phone)
         logger.info("[CMD] /clear - Session: %s | Historial borrado", phone)
-        return ("Historial limpiado. ¿En qué puedo ayudarte?", [])
+        return ("Historial limpiado. ¿En qué puedo ayudarte?", [], None)
 
     if _cmd == "/restart":
         logger.warning("[CMD] /restart - Session: %s | Comando reservado, sin acción", phone)
-        return ("Este comando está reservado para administradores.", [])
+        return ("Este comando está reservado para administradores.", [], None)
 
     if not phone:
         raise ValueError("phone es requerido")
@@ -205,7 +205,7 @@ async def process_message(
         except Exception as e:
             logger.error("[AGENT] Error creando agent: %s", e, exc_info=True)
             record_chat_error("agent_creation_error")
-            return ("Disculpa, tuve un problema de configuración. ¿Podrías intentar nuevamente?", [])
+            return ("Disculpa, tuve un problema de configuración. ¿Podrías intentar nuevamente?", [], None)
 
         agent_context = _prepare_agent_context(id_empresa, config, phone, id_bitrix)
 
@@ -293,10 +293,14 @@ async def process_message(
             log_level, error_key, log_tag, user_msg = _OPENAI_ERRORS[type(e)]
             getattr(logger, log_level)("[AGENT][%s] Session: %s | %s", log_tag, phone, e)
             record_chat_error(error_key)
-            return (user_msg, [])
+            return (user_msg, [], None)
         except Exception as e:
             logger.error("[AGENT] Error inesperado (%s) - Session: %s | %s", type(e).__name__, phone, e, exc_info=True)
             record_chat_error("agent_execution_error")
-            return ("Disculpa, tuve un problema al procesar tu mensaje. ¿Podrías intentar nuevamente?", [])
+            return ("Disculpa, tuve un problema al procesar tu mensaje. ¿Podrías intentar nuevamente?", [], None)
 
-    return (reply, urls)
+    event = agent_context.event
+    if event:
+        logger.info("[AGENT] Event detectado - Session: %s, event=%s", phone, event)
+
+    return (reply, urls, event)

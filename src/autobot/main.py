@@ -117,8 +117,9 @@ async def _process_and_callback(req: ChatRequest) -> None:
     _start = time.perf_counter()
     _http_status = "success"
 
+    event: str | None = None
     try:
-        reply, urls = await asyncio.wait_for(
+        reply, urls, event = await asyncio.wait_for(
             process_message(
                 message=req.question,
                 phone=req.phone,
@@ -167,7 +168,7 @@ async def _process_and_callback(req: ChatRequest) -> None:
         logger.error("[CALLBACK] CALLBACK_URL no configurada - Session: %s, respuesta descartada", req.phone)
         return
 
-    payload = ChatResponse(message=reply, urls=urls, phone=req.phone, id_empresa=req.id_empresa, id_chat=req.id_chat, phone_number_id=req.phone_number_id)
+    payload = ChatResponse(message=reply, urls=urls, phone=req.phone, id_empresa=req.id_empresa, id_chat=req.id_chat, phone_number_id=req.phone_number_id, event=event)
     callback_data = payload.model_dump()
     logger.info("[CALLBACK] JSON salida:\n%s", json.dumps(callback_data, indent=2, ensure_ascii=False))
     try:

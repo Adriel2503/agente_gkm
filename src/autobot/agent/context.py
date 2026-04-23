@@ -20,6 +20,7 @@ class AgentContext:
     id_empresa: int
     phone: str = ""
     id_bitrix: str | None = None
+    event: str | None = None  # "cita_agendada" | "callback_solicitado" | "desistido"
 
 
 def _prepare_agent_context(

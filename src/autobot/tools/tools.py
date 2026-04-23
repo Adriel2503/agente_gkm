@@ -146,6 +146,8 @@ async def agendar_cita(
         return "No pude actualizar el lead en este momento. Intenta nuevamente."
 
     if result["success"]:
+        if runtime and runtime.context:
+            runtime.context.event = "cita_agendada"
         return "Lead actualizado correctamente."
 
     resolve_errors = result.get("resolve_errors") or []
@@ -245,6 +247,8 @@ async def agendar_llamada(
         return "No pude actualizar el lead en este momento. Intenta nuevamente."
 
     if result["success"]:
+        if runtime and runtime.context:
+            runtime.context.event = "callback_solicitado"
         return "Lead actualizado correctamente."
 
     resolve_errors = result.get("resolve_errors") or []
@@ -290,6 +294,8 @@ async def marcar_desistido(runtime: ToolRuntime = None) -> str:
         return "No pude marcar el lead en este momento. Intenta nuevamente."
 
     if result["success"]:
+        if runtime and runtime.context:
+            runtime.context.event = "desistido"
         return "Lead marcado como desistido."
 
     error_msg = result.get("error")
