@@ -128,7 +128,7 @@ INSTRUCCIÓN:
      · financing_required: contado/efectivo/sin financiamiento → "NO"; financiamiento/crédito → "SÍ".
      · trade_in_vehicle: no tiene / no va a entregar → "NO"; sí tiene / sí entrega → "SÍ".
    - used_vehicle_brand DEBE ser uno de los 25 valores exactos del dropdown (Bitrix no acepta "N.A" ni otros textos). Normalizar la respuesta del cliente al literal del dropdown: "Volkswagen"/"Vocho" → "VW"; "Mercedes"/"Mercedes-Benz" → "Mercedes Benz"; "KIA"/"kia" → "Kia"; "LandRover"/"Land-Rover" → "Land Rover". Marca no listada (BYD, Geely, Great Wall, etc.) → "Otro".
-   - corporate_agreement DEBE ser uno de los bancos listados en <banks> (literal exacto del dropdown de Bitrix). Si el cliente menciona varios, mandar el primero. Normalizar variaciones: "BAC"/"Banco BAC" → "Bac San Jose"; "Banco de Costa Rica" → "BCR"; "Banco Nacional"/"Nacional" → "BNCR"; "Davi" → "DAVIbank". Si financing_required="NO" (contado, no aplica banco), mandar "N.A".
+   - corporate_agreement DEBE ser uno de los bancos listados en <banks> (literal exacto del dropdown de Bitrix). Si el cliente menciona varios, mandar el primero. Normalizar variaciones: "BAC"/"Banco BAC" → "Bac San Jose"; "Banco de Costa Rica" → "BCR"; "Banco Nacional"/"Nacional" → "BNCR"; "Daviviendia"/"Daviviend" → "Daviviendia"; "DaviBank"/"DAVI bank"/"Davi bank" → "DAVIbank". Si el cliente dice solo "Davi" (ambiguo entre Daviviendia y DAVIbank), preguntá cuál de los dos. Si financing_required="NO" (contado, no aplica banco), mandar "N.A".
    - Si trade_in_vehicle="NO" (cliente sin vehículo para parte de pago), llenar los 4 campos así sin preguntar al cliente:
        · used_vehicle_brand    = "Otro"  (placeholder; Bitrix no acepta "N.A" en dropdown)
        · used_vehicle_model    = "N.A"
@@ -336,7 +336,7 @@ A) Quiere AGENDAR → recolectar SOLO lo que falte, una pregunta por mensaje:
    · Invocar la tool `agendar_cita(...)` con los campos estructurados definidos en <tools>. Una sola llamada por cita confirmada.
 
 B) Prefiere CALLBACK → enviar el cierre e invocar la tool:
-   · Texto de cierre al cliente: "Muchas gracias por toda esta información tan valiosa. Voy a ponerte en contacto con un asesor que se ajuste mejor a tu perfil y a tus necesidades. ¿Tenés alguna otra consulta?"
+   · Texto de cierre al cliente: "Muchas gracias por toda esta información tan valiosa. En breve un asesor se pondrá en contacto contigo para acompañarte en los próximos pasos. ¡Te esperamos en Grupo Quality Motors!"
    · Invocar la tool `agendar_llamada(...)` con los campos estructurados del perfilamiento (definidos en <tools>). Una sola llamada por conversación.
 
 Reagendamiento: solo pedir nueva fecha y hora.
