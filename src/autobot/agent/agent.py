@@ -48,15 +48,14 @@ async def _get_agent(
     correo: str | None = None,
 ):
     """
-    Devuelve el agente compilado para (id_empresa, phone).
+    Devuelve el agente compilado para (id_empresa, phone, id_bitrix).
 
     El system prompt incluye <lead_identity> renderizada con los datos del
-    lead específico (nombre/marca/modelo/version/sucursal/correo/id_bitrix), por lo que el cache se
-    segmenta por persona y no solo por empresa; así evitamos que el primer
-    lead de una empresa contamine el prompt de los siguientes.
+    lead específico (nombre/marca/modelo/version/sucursal/correo/id_bitrix).
+    El cache se segmenta por lead de Vitrix para evitar que el mismo phone
+    con distinto id_bitrix reutilice el prompt del lead anterior.
 
-    TTL gobernado por AGENT_CACHE_TTL_MINUTES (default 60 min). Cambios en
-    los campos del lead se reflejan en el próximo MISS tras expirar el TTL.
+    TTL gobernado por AGENT_CACHE_TTL_MINUTES (default 60 min).
 
     Incluye doble verificación con asyncio.Lock por cache_key para serializar
     la primera creación cuando llegan requests concurrentes para la misma
@@ -70,14 +69,14 @@ async def _get_agent(
     Returns:
         Agente configurado con tools y checkpointer
     """
-    cache_key: tuple = (id_empresa, phone)
+    cache_key: tuple = (id_empresa, phone, id_bitrix)
 
     # Fast path: cache hit (sin await, atómico en asyncio single-thread)
     cached = get_cached_agent(cache_key)
     if cached is not None:
         AGENT_CACHE.labels(result="hit").inc()
         update_cache_stats("agent", agent_cache_size())
-        logger.info("[AGENT] Cache hit - id_empresa=%s, phone=%s", cache_key[0], cache_key[1])
+        logger.info("[AGENT] Cache hit - id_empresa=%s, phone=%s, id_bitrix=%s", cache_key[0], cache_key[1], cache_key[2])
         return cached
 
     # Slow path: serializar creación para evitar thundering herd
@@ -89,11 +88,11 @@ async def _get_agent(
             if cached is not None:
                 AGENT_CACHE.labels(result="hit").inc()
                 update_cache_stats("agent", agent_cache_size())
-                logger.info("[AGENT] Cache hit tras lock - id_empresa=%s, phone=%s", cache_key[0], cache_key[1])
+                logger.info("[AGENT] Cache hit tras lock - id_empresa=%s, phone=%s, id_bitrix=%s", cache_key[0], cache_key[1], cache_key[2])
                 return cached
 
             AGENT_CACHE.labels(result="miss").inc()
-            logger.info("[AGENT] Creando agente con LangChain 1.2+ API - id_empresa=%s, phone=%s", cache_key[0], cache_key[1])
+            logger.info("[AGENT] Creando agente con LangChain 1.2+ API - id_empresa=%s, phone=%s, id_bitrix=%s", cache_key[0], cache_key[1], cache_key[2])
 
             # Construir system prompt usando template Jinja2 (async: carga horario y productos en paralelo)
             system_prompt = await build_gqm_system_prompt(
@@ -121,9 +120,10 @@ async def _get_agent(
             cache_agent(cache_key, agent)
             update_cache_stats("agent", agent_cache_size())
             logger.info(
-                "[AGENT] Agente cacheado - id_empresa=%s, phone=%s, Tools: %s, TTL: %ss",
+                "[AGENT] Agente cacheado - id_empresa=%s, phone=%s, id_bitrix=%s, Tools: %s, TTL: %ss",
                 cache_key[0],
                 cache_key[1],
+                cache_key[2],
                 len(AGENT_TOOLS),
                 agent_cache_ttl(),
             )
@@ -170,8 +170,9 @@ async def process_message(
     _cmd = message.strip().lower()
     if _cmd == "/clear":
         if phone:
-            await get_checkpointer().adelete_thread(phone)
-        logger.info("[CMD] /clear - Session: %s | Historial borrado", phone)
+            _clear_thread_id = f"{id_empresa}_{phone}_{id_bitrix}"
+            await get_checkpointer().adelete_thread(_clear_thread_id)
+        logger.info("[CMD] /clear - Session: %s | Historial borrado", f"{id_empresa}_{phone}_{id_bitrix}")
         return ("Historial limpiado. ¿En qué puedo ayudarte?", [], None)
 
     if _cmd == "/restart":
@@ -187,7 +188,7 @@ async def process_message(
 
     # Serializar requests concurrentes del mismo usuario para evitar condiciones
     # de carrera sobre el mismo thread_id del checkpointer (InMemorySaver).
-    lock = acquire_session_lock(phone)
+    lock = acquire_session_lock(phone, id_bitrix)
     async with lock:
         try:
             agent = await _get_agent(
@@ -212,7 +213,7 @@ async def process_message(
         # LangGraph checkpointer usa thread_id como str
         run_config = {
             "configurable": {
-                "thread_id": phone
+                "thread_id": f"{id_empresa}_{phone}_{id_bitrix}"
             }
         }
         try:

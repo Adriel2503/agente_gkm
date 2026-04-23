@@ -257,7 +257,7 @@ Ver comentario-guia en `prompts/__init__.py` con ejemplo completo.
 
 ### Agent cache (TTLCache)
 
-- Key: `(id_empresa,)` — un agente compilado por tenant
+- Key: `(id_empresa, phone, id_bitrix)` — un agente compilado por lead (el prompt incluye `<lead_identity>` con datos específicos de cada lead de Vitrix)
 - TTL: `AGENT_CACHE_TTL_MINUTES` (default 60 min)
 - Maxsize: `AGENT_CACHE_MAXSIZE` (default 500)
 - Proteccion thundering herd: asyncio.Lock por cache_key con double-check
@@ -273,7 +273,7 @@ Ver comentario-guia en `prompts/__init__.py` con ejemplo completo.
 - Default: `InMemorySaver` (sin persistencia entre restarts)
 - Opcional: `AsyncRedisSaver` (si `REDIS_URL` esta configurado)
 - TTL configurable: `REDIS_CHECKPOINT_TTL_HOURS` (default 24h)
-- thread_id = phone (cada usuario tiene su hilo)
+- thread_id = `f"{id_empresa}_{phone}_{id_bitrix}"` (cada lead tiene su propio hilo, en espejo con la cache key)
 
 ### Message window (middleware)
 

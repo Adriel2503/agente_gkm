@@ -4,7 +4,7 @@ Caches y locks para el agente.
 Contiene:
   - TTLCache de agentes compilados (_agent_cache)
   - Locks por cache_key para evitar thundering herd (_agent_cache_locks)
-  - Locks por phone para serializar requests concurrentes (_session_locks)
+  - Locks por (phone, id_bitrix) para serializar requests concurrentes del mismo lead (_session_locks)
   - Funciones de limpieza periódica de locks huérfanos
 
 No importa de infra/ para evitar dependencias circulares.
@@ -20,11 +20,11 @@ from ...logger import get_logger
 
 logger = get_logger(__name__)
 
-# Cache de agentes compilados: clave = (id_empresa, phone).
+# Cache de agentes compilados: clave = (id_empresa, phone, id_bitrix).
 # Un agente por lead, porque el system prompt incluye <lead_identity>
 # renderizada con nombre/marca/modelo/version/sucursal/correo/id_bitrix específicos de cada persona.
-# TTL default 60 min. Los cambios de campos del lead (raros) se reflejan
-# en el próximo MISS tras expirar el TTL.
+# id_bitrix en la key evita que el mismo phone con diferente lead de Vitrix reutilice un prompt incorrecto.
+# TTL default 60 min. Si id_bitrix es None, leads sin ID del mismo phone comparten cache.
 class _LoggingTTLCache(TTLCache):
     """TTLCache que loggea cuando se elimina una entrada (TTL expirado o LRU por maxsize)."""
 
@@ -46,9 +46,10 @@ _agent_cache: TTLCache = _LoggingTTLCache(
 _agent_cache_locks: dict[tuple, asyncio.Lock] = {}
 _LOCKS_CLEANUP_THRESHOLD = int(app_config.AGENT_CACHE_MAXSIZE * 1.5)  # 1.5x cache maxsize
 
-# Un lock por phone para serializar requests concurrentes del mismo usuario.
-# Evita que dos mensajes del mismo usuario ejecuten agent.ainvoke sobre el mismo
-# thread_id del checkpointer en paralelo.
+# Un lock por (phone, id_bitrix) para serializar requests concurrentes del mismo lead.
+# Evita que dos mensajes del mismo lead ejecuten agent.ainvoke sobre el mismo
+# thread_id del checkpointer en paralelo. Mismo phone con distinto id_bitrix usa
+# locks distintos (los thread_ids también son distintos → sin riesgo de race).
 # Crece con cada sesión nueva; se limpia cuando supera _SESSION_LOCKS_CLEANUP_THRESHOLD.
 _session_locks: dict[str, asyncio.Lock] = {}
 _SESSION_LOCKS_CLEANUP_THRESHOLD = app_config.AGENT_CACHE_MAXSIZE  # escala con el cache
@@ -100,13 +101,14 @@ def release_agent_lock(cache_key: tuple) -> None:
 # Operaciones de session locks
 # ---------------------------------------------------------------------------
 
-def acquire_session_lock(phone: str) -> asyncio.Lock:
+def acquire_session_lock(phone: str, id_bitrix: str | None) -> asyncio.Lock:
     """
-    Retorna el lock para un phone, creándolo si no existe.
+    Retorna el lock para un (phone, id_bitrix), creándolo si no existe.
     Ejecuta limpieza de session locks huérfanos si se supera el threshold.
     """
-    _cleanup_stale_session_locks(phone)
-    return _session_locks.setdefault(phone, asyncio.Lock())
+    session_id = f"{phone}_{id_bitrix}"
+    _cleanup_stale_session_locks(session_id)
+    return _session_locks.setdefault(session_id, asyncio.Lock())
 
 
 # ---------------------------------------------------------------------------
@@ -140,7 +142,7 @@ def _cleanup_stale_agent_locks(current_cache_key: tuple) -> None:
         )
 
 
-def _cleanup_stale_session_locks(current_phone: str) -> None:
+def _cleanup_stale_session_locks(current_session_id: str) -> None:
     """
     Elimina locks de _session_locks que no están en uso.
     Solo se ejecuta si el dict supera _SESSION_LOCKS_CLEANUP_THRESHOLD.
@@ -151,18 +153,18 @@ def _cleanup_stale_session_locks(current_phone: str) -> None:
     """
     if len(_session_locks) <= _SESSION_LOCKS_CLEANUP_THRESHOLD:
         return
-    removed_phones: list[str] = []
+    removed_session_ids: list[str] = []
     for sid in list(_session_locks.keys()):
-        if sid == current_phone:
+        if sid == current_session_id:
             continue
         lock = _session_locks.get(sid)
         if lock is not None and not lock.locked():
             del _session_locks[sid]
-            removed_phones.append(sid)
-    if removed_phones:
+            removed_session_ids.append(sid)
+    if removed_session_ids:
         logger.debug(
-            "[CACHE] Limpieza de session locks: %s eliminados - phones=%s",
-            len(removed_phones), removed_phones[:10],
+            "[CACHE] Limpieza de session locks: %s eliminados - session_ids=%s",
+            len(removed_session_ids), removed_session_ids[:10],
         )
 
 

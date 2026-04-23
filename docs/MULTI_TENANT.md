@@ -150,7 +150,7 @@ Pasos para migrar de la estructura actual (plana) a tenants:
 
 ## Consideraciones
 
-- **Cache de agentes**: hoy se cachea por `(id_empresa, phone)`. Con tenants sigue igual, pero el agente se segmenta por lead porque el prompt incluye `<lead_identity>` con datos específicos de cada persona. Ver sección "Decisión de cache key" más abajo.
+- **Cache de agentes**: hoy se cachea por `(id_empresa, phone, id_bitrix)`. Con tenants sigue igual: el agente se segmenta por lead de Vitrix porque el prompt incluye `<lead_identity>` con datos específicos. Ver sección "Decisión de cache key" más abajo.
 - **Circuit breakers**: cada tenant puede definir sus propios CBs en su `config.py`. El registry de CBs global sigue funcionando para /health.
 - **GQMConfig**: se renombrara a algo generico (TenantConfig o AgentConfig) cuando se implemente. Los campos dinamicos vienen en el JSON del request.
 - **Testing**: cada tenant se testea independientemente. Se puede testear un tenant sin levantar los demas.
@@ -208,31 +208,38 @@ cache[cache_key] = agent
 - Inspección opaca: al mirar el cache solo se ven hashes, no los datos del lead reales.
 - La "ventaja" de la invalidación automática es marginal porque los campos casi nunca cambian.
 
-### Opción C — Minimalista (la implementada)
+### Opción C — Minimalista (la implementada, evolucionada a incluir id_bitrix)
 
-**Idea:** cache key simple `(id_empresa, phone)`, sin validar campos en absoluto. Si los datos del lead cambian, el prompt queda desactualizado hasta máximo 60 min (TTL) o hasta que el cliente lo mencione en el chat (y el historial del checkpointer lo captura).
+**Idea:** cache key `(id_empresa, phone, id_bitrix)`, sin validar el resto de los campos. El `id_bitrix` en la key resuelve el caso real observado en producción: Vitrix envía el mismo `phone` con distintos leads (distinto `id_bitrix`). Sin `id_bitrix` en la key, el segundo lead recibía el prompt del primero. El resto de los campos (marca, modelo, etc.) sigue el mismo criterio YAGNI: cambios son raros en ventana de 60 min.
 
 ```python
-cache_key: tuple = (id_empresa, phone)
+cache_key: tuple = (id_empresa, phone, id_bitrix)
 cached = get_cached_agent(cache_key)
 if cached is not None:
     return cached
 # MISS: build + cache
 ```
 
+Para mantener el historial de conversación aislado por lead (espejo de la cache key), el `thread_id` del checkpointer usa la misma estructura:
+
+```python
+run_config = {"configurable": {"thread_id": f"{id_empresa}_{phone}_{id_bitrix}"}}
+```
+
 **Pros:**
-- Mínimo cambio de código (solo agregar `phone` a la key y al parámetro de `_get_agent()`).
-- YAGNI: no se agrega complejidad por un edge case.
-- 1 entrada por persona en el cache, sin huérfanas.
+- Cambio simple: agregar `id_bitrix` a la key y al `thread_id`.
+- YAGNI: no se agrega complejidad por un edge case residual (cambios de marca/modelo dentro de los 60 min).
+- 1 entrada por lead en el cache.
 
 **Contras aceptados:**
-- Si el orquestador cambia silenciosamente los datos del lead (sin que el cliente lo mencione), el prompt viejo vive hasta 60 min.
+- Si el orquestador cambia silenciosamente `marca`/`modelo`/`version`/`sucursal` del mismo `id_bitrix`, el prompt viejo vive hasta 60 min.
+- Leads distintos del mismo phone producen entradas de cache separadas (aceptable: cada lead es una conversación comercial independiente).
 
-**Por qué se eligió C:** los 4 campos del lead cambian en escalas de **días**, no de minutos. En un TTL de 60 min, la probabilidad de que un campo cambie es casi nula, y si pasa, el modelo igual puede pescar el cambio del historial de conversación (el checkpointer sigue vivo en `thread_id = phone`). El costo de implementar A o B no se justifica para ese caso.
+**Por qué se eligió C:** los campos no-identitarios del lead cambian en escalas de **días**, no de minutos. En un TTL de 60 min la probabilidad es baja. El caso verdaderamente frecuente (multi-lead por phone desde Vitrix) se resuelve con `id_bitrix` en la key, sin código de invalidación.
 
 ### Escalada futura
 
-Si en producción se observa que los campos del lead cambian con frecuencia y causa problemas reales, migrar a **Opción A** es ~15 minutos de trabajo:
+Si en producción se observa que `marca`/`modelo`/`version`/`sucursal` cambian con frecuencia para el mismo `id_bitrix` y causa problemas reales, migrar a **Opción A** es ~15 minutos de trabajo:
 1. Crear `CachedAgent` NamedTuple en `runtime/_cache.py`.
 2. Agregar función `invalidate_agent(cache_key)`.
 3. En `_get_agent()`, envolver el retorno en `CachedAgent` y agregar bloque de comparación.
