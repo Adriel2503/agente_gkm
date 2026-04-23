@@ -62,6 +62,7 @@ async def buscar_vehiculo(
 
 @tool
 async def agendar_cita(
+    resumen: str,
     financing_required: str | None = None,
     corporate_agreement: str | None = None,
     trade_in_vehicle: str | None = None,
@@ -78,6 +79,7 @@ async def agendar_cita(
     Actualiza el lead en CRM con los campos del flujo comercial.
 
     Args:
+        resumen: Breve resumen de la conversación hasta el momento de agendar la cita.
         financing_required: Requiere financiamiento (SÍ/NO).
         corporate_agreement: Convenio corporativo seleccionado.
         trade_in_vehicle: Entrega de vehículo en parte de pago (SÍ/NO).
@@ -98,6 +100,7 @@ async def agendar_cita(
     if not any(
         value is not None and str(value).strip()
         for value in (
+            resumen,
             financing_required,
             corporate_agreement,
             trade_in_vehicle,
@@ -132,6 +135,7 @@ async def agendar_cita(
                 purchase_expectation=purchase_expectation,
                 budget_description=budget_description,
                 appointment_datetime=appointment_datetime,
+                resumen=resumen,
             )
     except Exception as e:
         logger.error("[agendar_cita] Error inesperado: %s", e, exc_info=True)

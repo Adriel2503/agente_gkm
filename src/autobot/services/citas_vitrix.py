@@ -105,6 +105,7 @@ def _build_payload(
     purchase_expectation: str | None = None,
     budget_description: str | None = None,
     appointment_datetime: str | None = None,
+    resumen: str | None = None,
 ) -> dict[str, object]:
     payload: dict[str, object] = {
         "action": _ACTION,
@@ -124,7 +125,7 @@ def _build_payload(
         "UF_CRM_1534532283": _clean_str(used_vehicle_year),
         "UF_CRM_1534533297": _clean_str(used_vehicle_mileage),
         "UF_CRM_1721064189466": _clean_str(purchase_expectation),
-        "SOURCE_DESCRIPTION": f"Presupuesto: {_clean_str(budget_description)} | Cita: {_clean_str(appointment_datetime)}",
+        "SOURCE_DESCRIPTION": f"Presupuesto: {_clean_str(budget_description)} | Cita: {_clean_str(appointment_datetime)} | Resumen: {_clean_str(resumen)}",
     }
 
     for key, value in mapped_values.items():
@@ -145,6 +146,7 @@ async def actualizar_lead_cita(
     purchase_expectation: str | None = None,
     budget_description: str | None = None,
     appointment_datetime: str | None = None,
+    resumen: str | None = None,
 ) -> dict:
     """
     POST directo a Vitrix para actualizar el lead con los campos del flujo.
@@ -161,6 +163,7 @@ async def actualizar_lead_cita(
         purchase_expectation: Expectativa de compra.
         budget_description: Presupuesto textual, por ejemplo "3000 dólares".
         appointment_datetime: Fecha y hora de la cita.
+        resumen: Breve resumen de la conversación hasta el momento de agendar la cita.
 
     Returns:
         Dict con la respuesta normalizada de Vitrix.
@@ -192,6 +195,7 @@ async def actualizar_lead_cita(
         purchase_expectation=purchase_expectation,
         budget_description=budget_description,
         appointment_datetime=appointment_datetime,
+        resumen=resumen,
     )
 
     logger.info(
