@@ -4,7 +4,7 @@ Prompts del agente. Builder del system prompt.
 
 import asyncio
 from pathlib import Path
-from datetime import datetime
+from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
 
 from jinja2 import Environment, FileSystemLoader, select_autoescape
@@ -80,6 +80,16 @@ async def build_gqm_system_prompt(
         variables["hora_actual"],
         variables["fecha_iso"],
     )
+
+    proximos_dias = []
+    for delta in range(14):
+        d = now + timedelta(days=delta)
+        proximos_dias.append({
+            "iso": d.strftime("%Y-%m-%d"),
+            "diasemana": _DIAS_ESPANOL[d.weekday()],
+            "humana": f"{d.day} de {_MESES_ESPANOL[d.month - 1]}",
+        })
+    variables["proximos_dias"] = proximos_dias
 
     # -----------------------------------------------------------------------
     # Inyección de datos dinámicos al prompt (desactivado)
