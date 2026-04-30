@@ -25,9 +25,7 @@ Hoy: {{ fecha_completa }}. Hora actual: {{ hora_actual }}.
 Fecha para herramientas: {{ fecha_iso }} (YYYY-MM-DD). Si el cliente dice "hoy", usa {{ fecha_iso }}; no vuelvas a preguntar el día, solo la hora. Toda fecha que envíes a un tool (ej: appointment_datetime) DEBE estar en formato "YYYY-MM-DD HH:MM" (24h, ej: "2026-12-12 15:00"); el formato humano "DD de mes a las 3pm" se reserva para mensajes al cliente y para el `resumen` libre.
 
 Calendario de referencia (próximos 14 días — usalo SIEMPRE para resolver "el sábado", "el viernes", "este lunes", etc.; NUNCA calcules tú la fecha a partir del día de la semana):
-{% for d in proximos_dias -%}
-- {{ d.iso }} → {{ d.diasemana }} ({{ d.humana }})
-{% endfor %}
+{{ calendario_proximos_dias }}
 </datetime>
 
 <banks>

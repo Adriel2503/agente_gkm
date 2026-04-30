@@ -81,15 +81,14 @@ async def build_gqm_system_prompt(
         variables["fecha_iso"],
     )
 
-    proximos_dias = []
+    proximos_dias_lineas = []
     for delta in range(14):
         d = now + timedelta(days=delta)
-        proximos_dias.append({
-            "iso": d.strftime("%Y-%m-%d"),
-            "diasemana": _DIAS_ESPANOL[d.weekday()],
-            "humana": f"{d.day} de {_MESES_ESPANOL[d.month - 1]}",
-        })
-    variables["proximos_dias"] = proximos_dias
+        iso = d.strftime("%Y-%m-%d")
+        diasemana = _DIAS_ESPANOL[d.weekday()]
+        humana = f"{d.day} de {_MESES_ESPANOL[d.month - 1]}"
+        proximos_dias_lineas.append(f"- {iso} → {diasemana} ({humana})")
+    variables["calendario_proximos_dias"] = "\n".join(proximos_dias_lineas)
 
     # -----------------------------------------------------------------------
     # Inyección de datos dinámicos al prompt (desactivado)
