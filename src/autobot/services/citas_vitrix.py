@@ -317,7 +317,7 @@ async def crear_task_confirmar_cita(id_bitrix: str) -> dict:
         logger.warning("[VITRIX:task] id_bitrix inválido — valor=%r", id_bitrix)
         return {"success": False, "task_id": None, "error": "id_bitrix inválido"}
 
-    deadline = (datetime.now(ZoneInfo(app_config.TIMEZONE)) + timedelta(minutes=30)).strftime(_TASK_DEADLINE_FMT)
+    deadline = (datetime.now(ZoneInfo(app_config.TIMEZONE)) + timedelta(hours=1)).strftime(_TASK_DEADLINE_FMT)
     payload = {
         "action": _TASK_ACTION,
         "api_key": app_config.APIKEY_VITRIX,
@@ -606,7 +606,7 @@ async def crear_task_llamada(id_bitrix: str) -> dict:
         logger.warning("[VITRIX:task_llamada] id_bitrix inválido — valor=%r", id_bitrix)
         return {"success": False, "task_id": None, "error": "id_bitrix inválido"}
 
-    deadline = (datetime.now(ZoneInfo(app_config.TIMEZONE)) + timedelta(minutes=30)).strftime(_TASK_DEADLINE_FMT)
+    deadline = (datetime.now(ZoneInfo(app_config.TIMEZONE)) + timedelta(hours=1)).strftime(_TASK_DEADLINE_FMT)
     payload = {
         "action": _TASK_ACTION,
         "api_key": app_config.APIKEY_VITRIX,
