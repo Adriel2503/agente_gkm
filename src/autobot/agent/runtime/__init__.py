@@ -9,6 +9,15 @@ from ._cache import (
     acquire_agent_lock,
     release_agent_lock,
     acquire_session_lock,
+    get_cached_prompt_text,
+    cache_prompt_text,
+    acquire_prompt_text_lock,
+)
+from ._prompt_store import (
+    get_prompt_version,
+    get_prompt_text,
+    close_prompt_redis,
+    VERSION_FILE_FALLBACK,
 )
 from .middleware import message_window
 
@@ -24,5 +33,12 @@ __all__ = [
     "acquire_agent_lock",
     "release_agent_lock",
     "acquire_session_lock",
+    "get_cached_prompt_text",
+    "cache_prompt_text",
+    "acquire_prompt_text_lock",
+    "get_prompt_version",
+    "get_prompt_text",
+    "close_prompt_redis",
+    "VERSION_FILE_FALLBACK",
     "message_window",
 ]

@@ -13,6 +13,8 @@ from .runtime import (
     get_model, get_checkpointer,
     get_cached_agent, cache_agent, agent_cache_size, agent_cache_ttl,
     acquire_agent_lock, release_agent_lock, acquire_session_lock,
+    get_cached_prompt_text, cache_prompt_text, acquire_prompt_text_lock,
+    get_prompt_version, get_prompt_text, VERSION_FILE_FALLBACK,
     message_window,
 )
 from ..tools.tools import AGENT_TOOLS
@@ -69,7 +71,12 @@ async def _get_agent(
     Returns:
         Agente configurado con tools y checkpointer
     """
-    cache_key: tuple = (id_empresa, phone, id_bitrix)
+    # Versión del prompt (de Redis). Va en la cache_key para que, al editar el
+    # prompt desde el frontend, la versión cambie y el agente se recompile con el
+    # texto nuevo. Si no hay Redis/clave → VERSION_FILE_FALLBACK ("file") y se usa
+    # el template local gqm_system.j2.
+    prompt_ver = await get_prompt_version(id_empresa)
+    cache_key: tuple = (id_empresa, phone, id_bitrix, prompt_ver)
 
     # Fast path: cache hit (sin await, atómico en asyncio single-thread)
     cached = get_cached_agent(cache_key)
@@ -94,7 +101,24 @@ async def _get_agent(
             AGENT_CACHE.labels(result="miss").inc()
             logger.info("[AGENT] Creando agente con LangChain 1.2+ API - id_empresa=%s, phone=%s, id_bitrix=%s", cache_key[0], cache_key[1], cache_key[2])
 
-            # Construir system prompt usando template Jinja2 (async: carga horario y productos en paralelo)
+            # Obtener el texto del prompt editable (de Redis), con cache local por
+            # (id_empresa, prompt_ver): solo se baja de Redis cuando cambia la
+            # versión. Si no hay versión de Redis (fallback "file"), system_prompt_source
+            # queda None y build_gqm_system_prompt usa el template local .j2.
+            system_prompt_source = None
+            if prompt_ver != VERSION_FILE_FALLBACK:
+                system_prompt_source = get_cached_prompt_text(id_empresa, prompt_ver)
+                if system_prompt_source is None:
+                    pt_lock = acquire_prompt_text_lock(id_empresa, prompt_ver)
+                    async with pt_lock:
+                        system_prompt_source = get_cached_prompt_text(id_empresa, prompt_ver)
+                        if system_prompt_source is None:
+                            system_prompt_source = await get_prompt_text(id_empresa)
+                            if system_prompt_source:
+                                cache_prompt_text(id_empresa, prompt_ver, system_prompt_source)
+                                logger.info("[AGENT] Prompt de Redis bajado y cacheado - id_empresa=%s, version=%s", id_empresa, prompt_ver)
+
+            # Construir system prompt: usa el texto de Redis si llegó; si no, el template .j2
             system_prompt = await build_gqm_system_prompt(
                 id_empresa=id_empresa,
                 config=config,
@@ -105,6 +129,7 @@ async def _get_agent(
                 id_bitrix=id_bitrix,
                 sucursal=sucursal,
                 correo=correo,
+                system_prompt_source=system_prompt_source,
             )
 
             # Crear agente con API moderna (response_format: reply + urls)

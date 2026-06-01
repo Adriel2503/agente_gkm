@@ -41,6 +41,17 @@ _agent_cache: TTLCache = _LoggingTTLCache(
     ttl=app_config.AGENT_CACHE_TTL_MINUTES * 60,
 )
 
+# Cache de textos de prompt por (id_empresa, version). Evita re-bajar el texto
+# (~23 KB) de Redis en cada mensaje: solo se baja cuando cambia la versión.
+_prompt_text_cache: TTLCache = TTLCache(
+    maxsize=app_config.AGENT_CACHE_MAXSIZE,
+    ttl=app_config.AGENT_CACHE_TTL_MINUTES * 60,
+)
+
+# Lock por (id_empresa, version) para serializar la bajada del texto desde Redis
+# (evita que varios mensajes de la misma empresa bajen el mismo texto a la vez).
+_prompt_text_locks: dict[tuple, asyncio.Lock] = {}
+
 # Un lock por cache_key para evitar thundering herd al crear el agente por primera vez.
 # Crece con cada id_empresa nuevo; se limpia cuando supera _LOCKS_CLEANUP_THRESHOLD.
 _agent_cache_locks: dict[tuple, asyncio.Lock] = {}
@@ -77,6 +88,25 @@ def agent_cache_ttl() -> int:
 def agent_cache_size() -> int:
     """Retorna la cantidad de agentes actualmente en cache."""
     return len(_agent_cache)
+
+
+# ---------------------------------------------------------------------------
+# Operaciones del prompt text cache
+# ---------------------------------------------------------------------------
+
+def get_cached_prompt_text(id_empresa: int, version: str) -> str | None:
+    """Retorna el texto de prompt cacheado para (id_empresa, version), o None."""
+    return _prompt_text_cache.get((id_empresa, version))
+
+
+def cache_prompt_text(id_empresa: int, version: str, text: str) -> None:
+    """Cachea el texto de prompt bajo (id_empresa, version)."""
+    _prompt_text_cache[(id_empresa, version)] = text
+
+
+def acquire_prompt_text_lock(id_empresa: int, version: str) -> asyncio.Lock:
+    """Lock para serializar la bajada del texto desde Redis por (id_empresa, version)."""
+    return _prompt_text_locks.setdefault((id_empresa, version), asyncio.Lock())
 
 
 # ---------------------------------------------------------------------------
@@ -176,4 +206,7 @@ __all__ = [
     "acquire_agent_lock",
     "release_agent_lock",
     "acquire_session_lock",
+    "get_cached_prompt_text",
+    "cache_prompt_text",
+    "acquire_prompt_text_lock",
 ]

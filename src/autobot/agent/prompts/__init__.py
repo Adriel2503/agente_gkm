@@ -8,6 +8,7 @@ from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
 
 from jinja2 import Environment, FileSystemLoader, select_autoescape
+from jinja2.sandbox import SandboxedEnvironment
 
 from ... import config as app_config
 from ...logger import get_logger
@@ -30,6 +31,11 @@ _jinja_env = Environment(
 )
 _system_template = _jinja_env.get_template("gqm_system.j2")
 
+# Entorno sandbox para renderizar el prompt editable desde el frontend (viene de
+# Redis). Es texto potencialmente editado por no-devs: el sandbox limita qué puede
+# hacer la plantilla y el try/except del builder cae al .j2 ante cualquier error.
+_sandbox_env = SandboxedEnvironment(autoescape=False)
+
 
 def _now_peru() -> datetime:
     """Fecha y hora actual en Perú (America/Lima)."""
@@ -46,6 +52,7 @@ async def build_gqm_system_prompt(
     id_bitrix: str | None = None,
     sucursal: str | None = None,
     correo: str | None = None,
+    system_prompt_source: str | None = None,
 ) -> str:
     """
     Construye el system prompt del agente.
@@ -114,6 +121,18 @@ async def build_gqm_system_prompt(
     #
     # 4. Usar {{ horario }} y {{ faqs }} en gqm_system.j2
     # -----------------------------------------------------------------------
+
+    # Si el orquestador proveyó el texto del prompt (editado desde el frontend,
+    # leído de Redis), renderizarlo con sandbox. Ante CUALQUIER error de render
+    # (placeholder mal escrito, etc.) caer al template local gqm_system.j2.
+    if system_prompt_source:
+        try:
+            return _sandbox_env.from_string(system_prompt_source).render(**variables)
+        except Exception as e:
+            logger.error(
+                "[PROMPT] Render del prompt de Redis falló (id_empresa=%s), uso archivo local: %s",
+                id_empresa, e,
+            )
 
     return _system_template.render(**variables)
 
