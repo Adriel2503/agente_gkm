@@ -11,7 +11,7 @@ from ._cache import (
     acquire_session_lock,
     get_cached_prompt_text,
     cache_prompt_text,
-    acquire_prompt_text_lock,
+    get_prompt_text_lock,
 )
 from ._prompt_store import (
     get_prompt_version,
@@ -35,7 +35,7 @@ __all__ = [
     "acquire_session_lock",
     "get_cached_prompt_text",
     "cache_prompt_text",
-    "acquire_prompt_text_lock",
+    "get_prompt_text_lock",
     "get_prompt_version",
     "get_prompt_text",
     "close_prompt_redis",

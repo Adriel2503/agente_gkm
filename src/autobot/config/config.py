@@ -104,6 +104,11 @@ REDIS_URL: str = _get_str("REDIS_URL", "")
 REDIS_CHECKPOINT_TTL_HOURS: int = _get_int(
     "REDIS_CHECKPOINT_TTL_HOURS", 24, min_val=0, max_val=8760
 )  # 0 = sin TTL, max 1 año
+# Timeout de socket para leer prompt:ver/prompt:txt. Si Redis cuelga, el GET
+# falla rápido y el agente cae al template local en vez de trabar el request.
+PROMPT_REDIS_TIMEOUT_SECONDS: float = _get_float(
+    "PROMPT_REDIS_TIMEOUT_SECONDS", 2.0, min_val=0.5, max_val=30.0
+)
 
 # ---------------------------------------------------------------------------
 # Logging

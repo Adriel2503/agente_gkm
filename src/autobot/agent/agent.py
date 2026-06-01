@@ -13,7 +13,7 @@ from .runtime import (
     get_model, get_checkpointer,
     get_cached_agent, cache_agent, agent_cache_size, agent_cache_ttl,
     acquire_agent_lock, release_agent_lock, acquire_session_lock,
-    get_cached_prompt_text, cache_prompt_text, acquire_prompt_text_lock,
+    get_cached_prompt_text, cache_prompt_text, get_prompt_text_lock,
     get_prompt_version, get_prompt_text, VERSION_FILE_FALLBACK,
     message_window,
 )
@@ -109,7 +109,7 @@ async def _get_agent(
             if prompt_ver != VERSION_FILE_FALLBACK:
                 system_prompt_source = get_cached_prompt_text(id_empresa, prompt_ver)
                 if system_prompt_source is None:
-                    pt_lock = acquire_prompt_text_lock(id_empresa, prompt_ver)
+                    pt_lock = get_prompt_text_lock()
                     async with pt_lock:
                         system_prompt_source = get_cached_prompt_text(id_empresa, prompt_ver)
                         if system_prompt_source is None:

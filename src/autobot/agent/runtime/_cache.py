@@ -48,9 +48,11 @@ _prompt_text_cache: TTLCache = TTLCache(
     ttl=app_config.AGENT_CACHE_TTL_MINUTES * 60,
 )
 
-# Lock por (id_empresa, version) para serializar la bajada del texto desde Redis
-# (evita que varios mensajes de la misma empresa bajen el mismo texto a la vez).
-_prompt_text_locks: dict[tuple, asyncio.Lock] = {}
+# Lock ÚNICO (bounded) para serializar la bajada del texto del prompt desde Redis.
+# La bajada es rara (solo al cambiar la versión) y rápida, así que un lock global
+# alcanza para el dedup (que solo un request baje el texto tras una edición) sin
+# un dict que crezca con cada (empresa, versión).
+_prompt_text_lock: asyncio.Lock = asyncio.Lock()
 
 # Un lock por cache_key para evitar thundering herd al crear el agente por primera vez.
 # Crece con cada id_empresa nuevo; se limpia cuando supera _LOCKS_CLEANUP_THRESHOLD.
@@ -104,9 +106,9 @@ def cache_prompt_text(id_empresa: int, version: str, text: str) -> None:
     _prompt_text_cache[(id_empresa, version)] = text
 
 
-def acquire_prompt_text_lock(id_empresa: int, version: str) -> asyncio.Lock:
-    """Lock para serializar la bajada del texto desde Redis por (id_empresa, version)."""
-    return _prompt_text_locks.setdefault((id_empresa, version), asyncio.Lock())
+def get_prompt_text_lock() -> asyncio.Lock:
+    """Lock global (bounded) para serializar la bajada del texto del prompt desde Redis."""
+    return _prompt_text_lock
 
 
 # ---------------------------------------------------------------------------
@@ -208,5 +210,5 @@ __all__ = [
     "acquire_session_lock",
     "get_cached_prompt_text",
     "cache_prompt_text",
-    "acquire_prompt_text_lock",
+    "get_prompt_text_lock",
 ]

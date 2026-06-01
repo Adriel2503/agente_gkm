@@ -27,7 +27,12 @@ def _get_client():
     """Cliente Redis async lazy (singleton). None si no hay REDIS_URL configurado."""
     global _client
     if _client is None and app_config.REDIS_URL:
-        _client = redis_async.from_url(app_config.REDIS_URL, decode_responses=True)
+        _client = redis_async.from_url(
+            app_config.REDIS_URL,
+            decode_responses=True,
+            socket_timeout=app_config.PROMPT_REDIS_TIMEOUT_SECONDS,
+            socket_connect_timeout=app_config.PROMPT_REDIS_TIMEOUT_SECONDS,
+        )
         logger.info("[PROMPT_STORE] Cliente Redis del prompt inicializado")
     return _client
 
