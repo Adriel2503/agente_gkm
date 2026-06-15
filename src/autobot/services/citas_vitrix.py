@@ -106,6 +106,8 @@ def _build_payload(
     budget_description: str | None = None,
     appointment_datetime: str | None = None,
     resumen: str | None = None,
+    marca: str | None = None,
+    agencia: str | None = None,
 ) -> dict[str, object]:
     payload: dict[str, object] = {
         "action": _ACTION,
@@ -131,6 +133,15 @@ def _build_payload(
     for key, value in mapped_values.items():
         payload[key] = value
 
+    # Sucursal elegida por el cliente → Vitrix rutea "agencia" al campo "Agencia <Marca>",
+    # pero SOLO si va acompañada de la marca (sin marca, Vitrix descarta la agencia).
+    # Se mandan en texto crudo: Vitrix resuelve a su ID interno (insensible a tildes/mayúsc).
+    agencia_clean = (agencia or "").strip()
+    marca_clean = (marca or "").strip()
+    if agencia_clean and agencia_clean.upper() != _DEFAULT_VALUE and marca_clean:
+        payload["marca"] = marca_clean
+        payload["agencia"] = agencia_clean
+
     return payload
 
 
@@ -147,6 +158,8 @@ async def actualizar_lead_cita(
     budget_description: str | None = None,
     appointment_datetime: str | None = None,
     resumen: str | None = None,
+    marca: str | None = None,
+    agencia: str | None = None,
 ) -> dict:
     """
     POST directo a Vitrix para actualizar el lead con los campos del flujo.
@@ -164,6 +177,8 @@ async def actualizar_lead_cita(
         budget_description: Presupuesto textual, por ejemplo "3000 dólares".
         appointment_datetime: Fecha y hora de la cita.
         resumen: Breve resumen de la conversación hasta el momento de agendar la cita.
+        marca: Marca de interés del lead (Vitrix la usa para rutear la agencia).
+        agencia: Sucursal/agencia elegida por el cliente (campo "Agencia <Marca>").
 
     Returns:
         Dict con la respuesta normalizada de Vitrix.
@@ -196,6 +211,8 @@ async def actualizar_lead_cita(
         budget_description=budget_description,
         appointment_datetime=appointment_datetime,
         resumen=resumen,
+        marca=marca,
+        agencia=agencia,
     )
 
     logger.info(

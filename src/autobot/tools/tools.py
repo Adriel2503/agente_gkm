@@ -104,6 +104,7 @@ async def agendar_cita(
     purchase_expectation: str | None = None,
     budget_description: str | None = None,
     appointment_datetime: str | None = None,
+    agencia: str | None = None,
     runtime: ToolRuntime = None,
 ) -> str:
     """
@@ -121,12 +122,19 @@ async def agendar_cita(
         purchase_expectation: Expectativa de compra.
         budget_description: Presupuesto textual, por ejemplo "3000 dólares".
         appointment_datetime: Fecha y hora de la cita.
+        agencia: Sucursal/agencia que el cliente eligió para la cita en el Paso 9.
+            Debe ser una de las sucursales de <stores> de la marca de interés. Si el
+            cliente no la cambió, se usa la sucursal del lead (contexto).
         Si un campo no aplica o no se conoce, usar "N.A".
 
     Returns:
         Mensaje corto indicando si el lead quedó actualizado o no.
     """
     ctx_snap = _context_snapshot(runtime)
+    # marca: del contexto del lead (Vitrix la necesita para rutear la agencia por marca).
+    # agencia: la elegida por el cliente; si no vino, fallback a la sucursal del lead.
+    marca_ctx = getattr(runtime.context, "marca", None) if runtime else None
+    agencia_final = agencia or (getattr(runtime.context, "sucursal", None) if runtime else None)
     args_snap = {
         "resumen": resumen,
         "financing_required": financing_required,
@@ -139,6 +147,9 @@ async def agendar_cita(
         "purchase_expectation": purchase_expectation,
         "budget_description": budget_description,
         "appointment_datetime": appointment_datetime,
+        "agencia": agencia,
+        "agencia_final": agencia_final,
+        "marca_ctx": marca_ctx,
     }
     logger.info("[TOOL:agendar_cita] INPUT args=%s context=%s", args_snap, ctx_snap)
     start = time.perf_counter()
@@ -183,6 +194,8 @@ async def agendar_cita(
                 budget_description=budget_description,
                 appointment_datetime=appointment_datetime,
                 resumen=resumen,
+                marca=marca_ctx,
+                agencia=agencia_final,
             )
     except Exception as e:
         elapsed_ms = int((time.perf_counter() - start) * 1000)

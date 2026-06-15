@@ -20,6 +20,8 @@ class AgentContext:
     id_empresa: int
     phone: str = ""
     id_bitrix: str | None = None
+    marca: str | None = None  # marca de interés del lead (para rutear la agencia en Vitrix)
+    sucursal: str | None = None  # sucursal del lead (fallback si el cliente no elige otra)
     event: str | None = None  # "cita_agendada" | "callback_solicitado" | "desistido"
 
 
@@ -28,6 +30,8 @@ def _prepare_agent_context(
     config: GQMConfig | None,
     phone: str,
     id_bitrix: str | None = None,
+    marca: str | None = None,
+    sucursal: str | None = None,
 ) -> AgentContext:
     """
     Prepara el contexto runtime para inyectar a las tools del agente.
@@ -40,6 +44,8 @@ def _prepare_agent_context(
         config: GQMConfig opcional validado por Pydantic.
         phone: Teléfono del cliente (str, identificador de sesión WhatsApp).
         id_bitrix: ID del lead en Bitrix/Vitrix (para tools de escritura en CRM).
+        marca: Marca de interés del lead (necesaria para que Vitrix rutee la agencia).
+        sucursal: Sucursal del lead (fallback si el cliente no elige otra en la conversación).
 
     Returns:
         AgentContext configurado.
@@ -48,6 +54,8 @@ def _prepare_agent_context(
         "id_empresa": id_empresa,
         "phone": phone,
         "id_bitrix": id_bitrix,
+        "marca": marca,
+        "sucursal": sucursal,
     }
 
     if config:
