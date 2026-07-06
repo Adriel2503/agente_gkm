@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AutoBot · Tools del agente</title>
+<style>
+  :root{
+    /* Tema claro corporativo · acento azul */
+    --bg:#f4f6fb; --bg2:#ffffff; --card:#ffffff; --line:#e2e8f3;
+    --txt:#0f1b33; --muted:#5a6b8c; --accent:#1d4ed8; --accent-soft:#eaf0ff;
+    --green:#0d9488; --green-soft:#e6f7f4; --warn:#b45309; --warn-soft:#fdf3e7;
+    --bad:#dc2626; --bad-soft:#fdecec;
+    --code:#0f1b33; --ja:#7dd3fc; --val:#fcd34d; --str:#86efac;
+    --shadow:0 1px 2px rgba(16,32,64,.06),0 8px 24px rgba(16,32,64,.06);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{
+    font-family:"Segoe UI",system-ui,Roboto,Arial,sans-serif;
+    background:var(--bg); color:var(--txt); overflow:hidden;
+  }
+  .deck{height:100vh;width:100vw;position:relative}
+  .slide{position:absolute;inset:0;display:none;flex-direction:column;padding:40px 64px 74px;animation:fade .35s ease;overflow-y:auto;background:var(--bg)}
+  .slide.active{display:flex}
+  /* franja de marca superior */
+  .slide::before{content:"";position:absolute;top:0;left:0;right:0;height:5px;background:linear-gradient(90deg,var(--accent),#3b82f6 60%,var(--green))}
+  @keyframes fade{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+  h1{font-size:40px;line-height:1.08;margin-bottom:10px;letter-spacing:-.8px;color:var(--txt);font-weight:700}
+  h2{font-size:24px;margin-bottom:12px;color:var(--txt);display:flex;align-items:center;gap:11px;flex-wrap:wrap;font-weight:700;letter-spacing:-.3px}
+  h2 .pill{font-size:12px;font-weight:700;padding:4px 13px;border-radius:999px;background:var(--accent);color:#fff;letter-spacing:.3px;text-transform:uppercase}
+  h2 .pill.green{background:var(--green)}
+  h2 .pill.warn{background:var(--warn)}
+  h2 .pill.red{background:var(--bad)}
+  h3{font-size:15px;color:var(--accent);margin:13px 0 7px;font-weight:700;letter-spacing:.2px}
+  p,li{color:var(--muted);font-size:15px;line-height:1.5}
+  .lead{font-size:18.5px;color:#33405c;max-width:940px;line-height:1.4}
+  .sub{color:var(--muted);font-size:16px;margin-top:5px}
+  ul{margin:6px 0 0 20px} li{margin:6px 0}
+  b,strong{color:var(--txt)}
+  code{font-family:"JetBrains Mono",Consolas,monospace;background:var(--accent-soft);padding:2px 7px;border-radius:5px;color:#1e40af;font-size:.88em;font-weight:600}
+  .grid{display:grid;gap:18px;margin-top:14px}
+  .g2{grid-template-columns:1fr 1fr} .g4{grid-template-columns:repeat(4,1fr)}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px 22px;box-shadow:var(--shadow)}
+  .card h3{margin-top:0}
+  .badge{display:inline-block;font-size:11.5px;font-weight:700;padding:4px 11px;border-radius:6px;background:var(--accent-soft);color:var(--accent);margin-bottom:10px;letter-spacing:.3px}
+  .badge.green{background:var(--green-soft);color:var(--green)} .badge.red{background:var(--bad-soft);color:var(--bad)} .badge.warn{background:var(--warn-soft);color:var(--warn)}
+  pre{background:var(--code);border:1px solid #1e2c4a;border-radius:12px;padding:16px 18px;overflow:auto;font-size:13px;line-height:1.55;font-family:"JetBrains Mono",Consolas,monospace;color:#cbd5e1;box-shadow:var(--shadow)}
+  .k{color:var(--ja)} .s{color:var(--str)} .n{color:var(--val)} .c{color:#7587a8;font-style:italic}
+  table{border-collapse:collapse;width:100%;margin-top:8px;font-size:13px;background:var(--card);border-radius:10px;overflow:hidden}
+  th,td{text-align:left;padding:6px 11px;border-bottom:1px solid var(--line);vertical-align:top}
+  tr:last-child td{border-bottom:none}
+  th{color:#fff;background:var(--accent);font-size:11.5px;text-transform:uppercase;letter-spacing:.6px;font-weight:700}
+  tbody tr:nth-child(even) td,table tr:nth-child(even) td{background:#f8fafd}
+  td code{font-size:12px}
+  .na{color:var(--warn);font-weight:600} .hl{color:var(--accent);font-weight:700} .muted{color:var(--muted)}
+  .two-col{display:grid;grid-template-columns:1fr 1fr;gap:24px;align-items:start}
+  .scroll-tbl{max-height:60vh;overflow:auto;border-radius:12px;border:1px solid var(--line);box-shadow:var(--shadow)}
+  .scroll-tbl table{margin:0;border-radius:0}
+  .scroll-tbl th{position:sticky;top:0;z-index:1}
+  .endpoint{display:flex;gap:10px;align-items:center;background:var(--accent-soft);border:1px solid #cdddff;border-radius:10px;padding:8px 14px;margin:9px 0;font-family:"JetBrains Mono",Consolas,monospace;font-size:13px;flex-wrap:wrap;color:#1e3a8a;font-weight:600}
+  .method{background:var(--accent);color:#fff;font-weight:700;padding:2px 10px;border-radius:6px;letter-spacing:.5px}
+  .chat{max-width:540px}
+  .msg{padding:10px 15px;border-radius:14px;margin:7px 0;font-size:14.5px;max-width:80%;line-height:1.4;box-shadow:var(--shadow)}
+  .user{background:var(--accent);margin-left:auto;border-bottom-right-radius:4px;color:#fff}
+  .bot{background:#fff;border:1px solid var(--line);border-bottom-left-radius:4px;color:var(--txt)}
+  .who{font-size:11px;color:var(--muted);margin:9px 0 -2px;font-weight:600}
+  .toolcards{display:grid;grid-template-columns:repeat(2,1fr);gap:16px;margin-top:20px;max-width:920px;margin-left:auto;margin-right:auto;width:100%}
+  .tc{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px;border-top:4px solid var(--accent);box-shadow:var(--shadow);cursor:pointer;transition:transform .15s,box-shadow .15s,border-color .15s;outline:none}
+  .tc:hover,.tc:focus-visible{transform:translateY(-4px);box-shadow:0 10px 30px rgba(29,78,216,.18);border-color:var(--accent)}
+  .tc.t2{border-top-color:var(--green)} .tc.t3{border-top-color:var(--warn)} .tc.t4{border-top-color:var(--bad)}
+  .tc h3{margin:0 0 6px;color:var(--txt);font-size:17px}
+  .tc .ep{font-size:12px;color:var(--accent);font-family:monospace;font-weight:600}
+  .tc .go{display:inline-block;margin-top:12px;font-size:13px;font-weight:700;color:var(--accent);opacity:.65;transition:opacity .15s,transform .15s}
+  .tc:hover .go,.tc:focus-visible .go{opacity:1;transform:translateX(3px)}
+  .nav{position:fixed;bottom:0;left:0;right:0;height:60px;display:flex;align-items:center;justify-content:space-between;padding:0 28px;background:rgba(244,246,251,.92);border-top:1px solid var(--line);backdrop-filter:blur(6px)}
+  .dots{display:flex;gap:7px} .dot{width:9px;height:9px;border-radius:50%;background:#c3cee3;cursor:pointer;transition:.2s}
+  .dot.on{background:var(--accent);transform:scale(1.35)}
+  .btn{background:#fff;border:1px solid var(--line);color:var(--txt);padding:8px 17px;border-radius:9px;cursor:pointer;font-size:14px;font-weight:600;box-shadow:var(--shadow)}
+  .btn:hover{border-color:var(--accent);color:var(--accent)}
+  .counter{position:fixed;top:22px;right:30px;font-size:13px;color:var(--muted);letter-spacing:1px;font-weight:600}
+  .footnote{margin-top:auto;padding-top:18px;color:#8493b3;font-size:13px;border-top:1px solid var(--line);margin-top:20px}
+</style>
+</head>
+<body>
+<div class="deck" id="deck">
+
+  <!-- 1 PORTADA -->
+  <section class="slide active">
+    <h1>AutoBot · Las 4 tools del agente</h1>
+    <p class="lead">Qué endpoint usa cada tool, qué parámetros recibe y qué representa cada uno, con un ejemplo real de cada una.</p>
+    <div class="toolcards">
+      <div class="tc" onclick="set(2)" role="link" tabindex="0"><h3>🔍 buscar_vehiculo</h3><p>Busca modelos KIA por similitud.</p><div class="ep">RAG API · /buscar</div><span class="go">Ver detalle →</span></div>
+      <div class="tc t2" onclick="set(3)" role="link" tabindex="0"><h3>📅 agendar_cita</h3><p>Cierra con cita agendada.</p><div class="ep">Bitrix · edit + task</div><span class="go">Ver detalle →</span></div>
+      <div class="tc t3" onclick="set(6)" role="link" tabindex="0"><h3>📞 agendar_llamada</h3><p>Cliente pide callback.</p><div class="ep">Bitrix · edit + task</div><span class="go">Ver detalle →</span></div>
+      <div class="tc t4" onclick="set(9)" role="link" tabindex="0"><h3>🚫 marcar_desistido</h3><p>Cierra lead sin éxito.</p><div class="ep">Bitrix · edit</div><span class="go">Ver detalle →</span></div>
+    </div>
+    <div class="footnote">Hacé <b>clic en una tool</b> para ir a su detalle · navegá con <b>← →</b> / espacio. Las 3 últimas tools escriben en el CRM Bitrix (Bitrix24).</div>
+  </section>
+
+  <!-- 2 PANORAMA -->
+  <section class="slide">
+    <h2>Panorama: 2 endpoints, 4 tools</h2>
+    <p class="lead">El LLM (gpt-4o-mini) decide cuándo llamar cada tool durante la conversación. Solo hay <b>dos servicios externos</b> por detrás.</p>
+    <div class="grid g2" style="margin-top:18px">
+      <div class="card">
+        <span class="badge">RAG API (lectura)</span>
+        <div class="endpoint"><span class="method">POST</span><span>API_KIA_RAG_URL → /buscar</span></div>
+        <p>Solo <code>buscar_vehiculo</code>. Búsqueda semántica con pgvector. <b>Resiliente:</b> tiene retry + circuit breaker (es lectura, se puede reintentar).</p>
+      </div>
+      <div class="card">
+        <span class="badge green">Bitrix / Bitrix24 (escritura)</span>
+        <div class="endpoint"><span class="method">POST</span><span>BITRIX_API_URL · api_key en el body</span></div>
+        <p>Las 3 tools de cierre. Mismo endpoint; cambia el campo <code>action</code> (<code>edit</code> / <code>task</code>). <b>Sin retry ni cache</b> — idempotencia delegada al prompt.</p>
+      </div>
+    </div>
+    <h3>Cada tool de cierre marca un evento de negocio</h3>
+    <table>
+      <tr><th>Tool</th><th>action(es) Bitrix</th><th>event resultante</th></tr>
+      <tr><td><code>agendar_cita</code></td><td>edit + task</td><td><span class="hl">cita_agendada</span></td></tr>
+      <tr><td><code>agendar_llamada</code></td><td>edit + task</td><td><span class="hl">callback_solicitado</span></td></tr>
+      <tr><td><code>marcar_desistido</code></td><td>edit</td><td><span class="hl">desistido</span></td></tr>
+    </table>
+  </section>
+
+  <!-- 3 BUSCAR_VEHICULO -->
+  <section class="slide">
+    <h2><span class="pill">Tool 1</span> 🔍 buscar_vehiculo</h2>
+    <p class="sub">Busca modelos KIA por similitud semántica en el catálogo y devuelve hasta 3 modelos con toda su ficha.</p>
+    <div class="two-col">
+      <div>
+        <span class="badge">Parámetro que recibe la tool (lo pasa el LLM)</span>
+        <table>
+          <tr><th>Parámetro</th><th>Tipo</th><th>Representa</th></tr>
+          <tr><td><code>query</code> <span class="muted">(requerido)</span></td><td><span class="hl">string</span></td><td>Texto libre de búsqueda. Lo arma el agente desde lo que pide el cliente: "auto familiar", "SUV barato", "Picanto".</td></tr>
+        </table>
+        <h3>Qué hace la tool con eso</h3>
+        <p>Es la única tool que <b>recibe un solo parámetro</b>. Lo envía al endpoint RAG y devuelve hasta 3 modelos con su ficha.</p>
+        <p class="muted" style="margin-top:6px">Única tool de <b>lectura</b>: si la red falla, reintenta y el circuit breaker la protege. No escribe nada en el CRM.</p>
+      </div>
+      <div>
+        <span class="badge warn">Ejemplo</span>
+        <div class="chat">
+          <div class="who">Cliente</div><div class="msg user">Busco una SUV familiar, no muy cara</div>
+          <div class="who">AutoBot</div><div class="msg bot">Dejame ver opciones para vos…</div>
+        </div>
+        <p style="margin-top:8px">El agente llama:</p>
+<pre><span class="k">buscar_vehiculo</span>(
+  query = <span class="s">"SUV familiar económica"</span>
+)</pre>
+        <p style="margin-top:8px">→ POST <code>/buscar</code> con <code>{"query":"SUV familiar económica"}</code> → devuelve Sportage, Seltos, Sonet con precio y ficha, y el bot responde con esas opciones.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 4 AGENDAR_CITA -->
+  <section class="slide">
+    <h2><span class="pill green">Tool 2</span> 📅 agendar_cita · parámetros que recibe</h2>
+    <p class="sub">Estos son los <b>parámetros que el LLM le pasa a la tool</b>. La tool los transforma y arma sola el payload (edit + task) hacia Bitrix.</p>
+    <div class="two-col" style="margin-top:8px">
+      <div>
+        <span class="badge green">Parámetros de la tool (los pasa el LLM)</span>
+        <div class="scroll-tbl" style="max-height:62vh">
+        <table>
+          <tr><th>Parámetro</th><th>Tipo</th><th>Representa</th></tr>
+          <tr><td><code>resumen</code></td><td>string</td><td>Resumen de la charla al agendar</td></tr>
+          <tr><td><code>financing_required</code></td><td>string SÍ/NO</td><td>¿Requiere financiamiento?</td></tr>
+          <tr><td><code>corporate_agreement</code></td><td>string</td><td>Convenio corporativo</td></tr>
+          <tr><td><code>trade_in_vehicle</code></td><td>string SÍ/NO</td><td>¿Entrega usado en parte de pago?</td></tr>
+          <tr><td><code>used_vehicle_brand</code></td><td>string</td><td>Marca del usado</td></tr>
+          <tr><td><code>used_vehicle_model</code></td><td>string</td><td>Modelo del usado</td></tr>
+          <tr><td><code>used_vehicle_year</code></td><td>string</td><td>Año del usado</td></tr>
+          <tr><td><code>used_vehicle_mileage</code></td><td>string</td><td>Kilometraje del usado</td></tr>
+          <tr><td><code>purchase_expectation</code></td><td>string</td><td>Expectativa de compra</td></tr>
+          <tr><td><code>budget_description</code></td><td>string</td><td>Presupuesto textual</td></tr>
+          <tr><td><code>appointment_datetime</code></td><td>string</td><td><b>Fecha/hora de la cita</b> (solo en esta tool)</td></tr>
+        </table>
+        </div>
+      </div>
+      <div>
+        <h3>Qué hace la tool con eso</h3>
+        <p>Con esos 11 parámetros la tool dispara <b>2 POST</b> a Bitrix:</p>
+        <ul>
+          <li><b>edit</b> — mapea los parámetros a los campos <code>UF_CRM_*</code> del lead.</li>
+          <li><b>task</b> — recordatorio para el asesor. <span class="hl">No usa parámetros del LLM</span>: título, descripción y deadline son fijos.</li>
+        </ul>
+        <h3>No son parámetros de la tool</h3>
+        <p><code>id_bitrix</code> sale del <b>contexto de la sesión</b>, no del LLM. Los campos del payload (<code>action</code>, <code>api_key</code>, <code>ID</code>, <code>STATUS_ID</code>, <code>UF_CRM_*</code>) los arma el código, no la IA.</p>
+      </div>
+    </div>
+    <p class="footnote">Tipos: la IA pasa todo como <b>string</b>. Lo que no aplica o no se conoce → <span class="na">"N.A"</span>.</p>
+  </section>
+
+  <!-- 5 AGENDAR_CITA EJEMPLO: llamada a la tool -->
+  <section class="slide">
+    <h2><span class="pill green">Tool 2 · ejemplo</span> María agenda una visita</h2>
+    <div class="two-col">
+      <div>
+        <div class="chat">
+          <div class="who">María</div><div class="msg user">Quiero el Sportage, con financiamiento</div>
+          <div class="who">María</div><div class="msg user">Entrego mi Corolla 2018, 85 mil km. Presupuesto 25 mil USD, compro este mes</div>
+          <div class="who">AutoBot</div><div class="msg bot">¿Coordinamos visita el 20/05 a las 16:00 en Palermo?</div>
+          <div class="who">María</div><div class="msg user">Sí, dale 👍</div>
+        </div>
+      </div>
+      <div>
+        <span class="badge green">Llamada a la tool</span>
+<pre><span class="k">agendar_cita</span>(
+  resumen = <span class="s">"Interesada en Sportage EX, financia"</span>,
+  financing_required = <span class="s">"SÍ"</span>,
+  trade_in_vehicle = <span class="s">"SÍ"</span>,
+  used_vehicle_brand = <span class="s">"Toyota"</span>,
+  used_vehicle_model = <span class="s">"Corolla"</span>,
+  used_vehicle_year = <span class="s">"2018"</span>,
+  used_vehicle_mileage = <span class="s">"85000"</span>,
+  budget_description = <span class="s">"25000 dólares"</span>,
+  purchase_expectation = <span class="s">"Comprar este mes"</span>,
+  appointment_datetime = <span class="s">"2026-05-20 16:00"</span>
+)</pre>
+        <p class="muted" style="margin-top:8px">Una sola llamada a la tool dispara <b>dos POST</b> a Bitrix, en este orden: primero <code>edit</code>, y 5s después <code>task</code>. Cada uno se detalla en la siguiente diapositiva.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 5b AGENDAR_CITA: los dos payloads por separado -->
+  <section class="slide">
+    <h2><span class="pill green">Tool 2 · qué se manda</span> edit y task, por separado</h2>
+    <p class="sub">La tool <code>agendar_cita</code> hace <b>2 envíos</b> al mismo endpoint Bitrix. Son payloads distintos.</p>
+    <div class="two-col" style="margin-top:8px">
+      <div>
+        <span class="badge green">1 · action = edit &nbsp;·&nbsp; actualiza el lead</span>
+<pre><span class="k">{</span>
+  <span class="k">"action"</span>: <span class="s">"edit"</span>,
+  <span class="k">"api_key"</span>: <span class="s">"&lt;APIKEY_BITRIX&gt;"</span>,
+  <span class="k">"ID"</span>: <span class="n">78421</span>,
+  <span class="k">"UF_CRM_1774974891"</span>: <span class="s">"Sesión Bot Completada Exitosamente"</span>,
+  <span class="k">"UF_CRM_1728502747862"</span>: <span class="s">"Llamar - confirmar cita IA"</span>,
+  <span class="k">"STATUS_ID"</span>: <span class="s">"Asignado a Vendedor (Sin Contacto)"</span>,
+  <span class="k">"UF_CRM_1653688826"</span>: <span class="s">"SÍ"</span>,
+  <span class="k">"UF_CRM_1653599755"</span>: <span class="s">"SÍ"</span>,
+  <span class="k">"UF_CRM_1653605302623"</span>: <span class="s">"Toyota"</span>,
+  <span class="k">"UF_CRM_1653605318164"</span>: <span class="s">"Corolla"</span>,
+  <span class="k">"UF_CRM_1534532283"</span>: <span class="s">"2018"</span>,
+  <span class="k">"UF_CRM_1534533297"</span>: <span class="s">"85000"</span>,
+  <span class="k">"UF_CRM_1721064189466"</span>: <span class="s">"Comprar este mes"</span>,
+  <span class="k">"UF_CRM_1774975288"</span>: <span class="s">"N.A"</span>,
+  <span class="k">"SOURCE_DESCRIPTION"</span>: <span class="s">"Presupuesto: 25000 dólares | Cita: 2026-05-20 16:00 | Resumen: …"</span>
+<span class="k">}</span></pre>
+        <p class="muted">Vuelca en el lead todo lo que entendió de María.</p>
+      </div>
+      <div>
+        <span class="badge">2 · action = task &nbsp;·&nbsp; 5s después · recordatorio del asesor</span>
+<pre><span class="k">{</span>
+  <span class="k">"action"</span>: <span class="s">"task"</span>,
+  <span class="k">"api_key"</span>: <span class="s">"&lt;APIKEY_BITRIX&gt;"</span>,
+  <span class="k">"ID"</span>: <span class="n">78421</span>,
+  <span class="k">"TITLE"</span>: <span class="s">"Llamar - confirmar cita IA"</span>,
+  <span class="k">"DESCRIPTION"</span>: <span class="s">"-"</span>,
+  <span class="k">"DEADLINE"</span>: <span class="s">"2026-05-20 16:30:00"</span>
+<span class="k">}</span></pre>
+        <h3>Por qué van separados</h3>
+        <ul>
+          <li><b>edit</b> = los datos del cliente. Lleva todos los <code>UF_CRM_*</code>.</li>
+          <li><b>task</b> = recordatorio para el vendedor humano. Salvo el <code>ID</code>, todo es fijo.</li>
+          <li>El <code>sleep(5s)</code> entre ambos evita que la task llegue antes de que Bitrix procese el edit.</li>
+          <li><code>DEADLINE</code> = ahora + 30 min: ventana para llamar, <span class="hl">no</span> la hora de la cita (esa va en el edit).</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- 6 AGENDAR_LLAMADA: parámetros por envío -->
+  <section class="slide">
+    <h2><span class="pill warn">Tool 3</span> 📞 agendar_llamada · parámetros que recibe</h2>
+    <p class="sub">El cliente <b>no agenda</b> pero acepta que lo llamen. Mismos parámetros que cita pero <span class="hl">sin appointment_datetime</span>.</p>
+    <div class="two-col" style="margin-top:8px">
+      <div>
+        <span class="badge warn">Parámetros de la tool (los pasa el LLM)</span>
+        <div class="scroll-tbl" style="max-height:62vh">
+        <table>
+          <tr><th>Parámetro</th><th>Tipo</th><th>Representa</th></tr>
+          <tr><td><code>resumen</code></td><td>string</td><td>Resumen de la charla al pedir el callback</td></tr>
+          <tr><td><code>financing_required</code></td><td>string SÍ/NO</td><td>¿Requiere financiamiento?</td></tr>
+          <tr><td><code>corporate_agreement</code></td><td>string</td><td>Convenio corporativo</td></tr>
+          <tr><td><code>trade_in_vehicle</code></td><td>string SÍ/NO</td><td>¿Entrega usado en parte de pago?</td></tr>
+          <tr><td><code>used_vehicle_brand</code></td><td>string</td><td>Marca del usado</td></tr>
+          <tr><td><code>used_vehicle_model</code></td><td>string</td><td>Modelo del usado</td></tr>
+          <tr><td><code>used_vehicle_year</code></td><td>string</td><td>Año del usado</td></tr>
+          <tr><td><code>used_vehicle_mileage</code></td><td>string</td><td>Kilometraje del usado</td></tr>
+          <tr><td><code>purchase_expectation</code></td><td>string</td><td>Expectativa de compra</td></tr>
+          <tr><td><code>budget_description</code></td><td>string</td><td>Presupuesto textual</td></tr>
+        </table>
+        </div>
+      </div>
+      <div>
+        <h3>Qué hace la tool con eso</h3>
+        <p>Con esos 10 parámetros la tool dispara <b>2 POST</b> a Bitrix:</p>
+        <ul>
+          <li><b>edit</b> — mapea los parámetros a los campos <code>UF_CRM_*</code> del lead.</li>
+          <li><b>task</b> — recordatorio para el asesor. <span class="hl">No usa parámetros del LLM</span>: todo fijo.</li>
+        </ul>
+        <h3>Diferencia clave vs. cita</h3>
+        <p><span class="hl">No recibe <code>appointment_datetime</code></span> (no hay visita). La etiqueta de cierre es <code>"Llamar - Cliente interesado IA"</code>.</p>
+      </div>
+    </div>
+    <p class="footnote">Tipos: la IA pasa todo como <b>string</b>. Lo que no aplica o no se conoce → <span class="na">"N.A"</span>. <code>id_bitrix</code> sale del contexto, no del LLM.</p>
+  </section>
+
+  <!-- 6b AGENDAR_LLAMADA EJEMPLO: llamada a la tool -->
+  <section class="slide">
+    <h2><span class="pill warn">Tool 3 · ejemplo</span> Pedro pide que lo llamen</h2>
+    <div class="two-col">
+      <div>
+        <div class="chat">
+          <div class="who">Pedro</div><div class="msg user">Me interesa el Seltos pero ahora no puedo ir. ¿Me llaman?</div>
+          <div class="who">AutoBot</div><div class="msg bot">¡Claro! Un asesor te contacta. ¿Pagás de contado o financiado?</div>
+          <div class="who">Pedro</div><div class="msg user">De contado. Presupuesto 18 mil USD</div>
+          <div class="who">AutoBot</div><div class="msg bot">¡Perfecto, Pedro! Te llaman a la brevedad.</div>
+        </div>
+      </div>
+      <div>
+        <span class="badge warn">Llamada a la tool</span>
+<pre><span class="k">agendar_llamada</span>(
+  resumen = <span class="s">"Interesado en Seltos, pide callback"</span>,
+  financing_required = <span class="s">"NO"</span>,
+  budget_description = <span class="s">"18000 dólares"</span>,
+  purchase_expectation = <span class="s">"N.A"</span>
+)</pre>
+        <p class="muted" style="margin-top:8px">Una sola llamada dispara <b>dos POST</b> a Bitrix: primero <code>edit</code> (sin fecha de cita), y 5s después <code>task</code> de callback. Cada uno en la siguiente diapositiva.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 6c AGENDAR_LLAMADA: los dos payloads por separado -->
+  <section class="slide">
+    <h2><span class="pill warn">Tool 3 · qué se manda</span> edit y task, por separado</h2>
+    <p class="sub">La tool <code>agendar_llamada</code> hace <b>2 envíos</b> al mismo endpoint Bitrix. Son payloads distintos.</p>
+    <div class="two-col" style="margin-top:8px">
+      <div>
+        <span class="badge warn">1 · action = edit &nbsp;·&nbsp; actualiza el lead</span>
+<pre><span class="k">{</span>
+  <span class="k">"action"</span>: <span class="s">"edit"</span>,
+  <span class="k">"api_key"</span>: <span class="s">"&lt;APIKEY_BITRIX&gt;"</span>,
+  <span class="k">"ID"</span>: <span class="n">90233</span>,
+  <span class="k">"UF_CRM_1774974891"</span>: <span class="s">"Sesión Bot Completada Exitosamente"</span>,
+  <span class="k">"UF_CRM_1728502747862"</span>: <span class="s">"Llamar - Cliente interesado IA"</span>,
+  <span class="k">"STATUS_ID"</span>: <span class="s">"Asignado a Vendedor (Sin Contacto)"</span>,
+  <span class="k">"UF_CRM_1653688826"</span>: <span class="s">"NO"</span>,
+  <span class="k">"UF_CRM_1653599755"</span>: <span class="s">"N.A"</span>,
+  <span class="k">"UF_CRM_1653605302623"</span>: <span class="s">"N.A"</span>,
+  <span class="k">"UF_CRM_1653605318164"</span>: <span class="s">"N.A"</span>,
+  <span class="k">"UF_CRM_1534532283"</span>: <span class="s">"N.A"</span>,
+  <span class="k">"UF_CRM_1534533297"</span>: <span class="s">"N.A"</span>,
+  <span class="k">"UF_CRM_1721064189466"</span>: <span class="s">"N.A"</span>,
+  <span class="k">"UF_CRM_1774975288"</span>: <span class="s">"N.A"</span>,
+  <span class="k">"SOURCE_DESCRIPTION"</span>: <span class="s">"Presupuesto: 18000 dólares | Resumen: Interesado en Seltos, pide callback."</span>
+<span class="k">}</span></pre>
+        <p class="muted">Sin sección "Cita: …" — el cliente no agendó.</p>
+      </div>
+      <div>
+        <span class="badge">2 · action = task &nbsp;·&nbsp; 5s después · recordatorio del asesor</span>
+<pre><span class="k">{</span>
+  <span class="k">"action"</span>: <span class="s">"task"</span>,
+  <span class="k">"api_key"</span>: <span class="s">"&lt;APIKEY_BITRIX&gt;"</span>,
+  <span class="k">"ID"</span>: <span class="n">90233</span>,
+  <span class="k">"TITLE"</span>: <span class="s">"Llamar - Cliente interesado IA"</span>,
+  <span class="k">"DESCRIPTION"</span>: <span class="s">"-"</span>,
+  <span class="k">"DEADLINE"</span>: <span class="s">"2026-05-20 16:30:00"</span>
+<span class="k">}</span></pre>
+        <h3>Por qué van separados</h3>
+        <ul>
+          <li><b>edit</b> = datos del cliente. Lleva todos los <code>UF_CRM_*</code> (acá casi todos en N.A salvo financiamiento y presupuesto).</li>
+          <li><b>task</b> = recordatorio para el vendedor. Salvo el <code>ID</code>, todo fijo.</li>
+          <li>El <code>sleep(5s)</code> entre ambos evita que la task llegue antes de que Bitrix procese el edit.</li>
+          <li><code>DEADLINE</code> = ahora + 30 min: ventana para llamar a Pedro.</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- 7 MARCAR_DESISTIDO -->
+  <section class="slide">
+    <h2><span class="pill red">Tool 4</span> 🚫 marcar_desistido · parámetros que recibe</h2>
+    <p class="sub">Cierra el lead sin éxito comercial.</p>
+    <div class="two-col" style="margin-top:8px">
+      <div>
+        <span class="badge red">Parámetros de la tool</span>
+        <div class="card" style="margin-top:4px">
+          <h3 style="margin-top:0">Ninguno</h3>
+          <p><code>marcar_desistido()</code> <b>no recibe ningún parámetro del LLM.</b> El agente solo decide <i>cuándo</i> llamarla.</p>
+          <p style="margin-top:8px">La tool arma sola el payload <code>edit</code>: usa el <code>id_bitrix</code> del <b>contexto de la sesión</b> y el resto de los campos son fijos (status, razón "No respondió a la IA"). <span class="hl">No crea task.</span></p>
+        </div>
+        <h3>¿Cuándo se llama?</h3>
+        <ul>
+          <li>No responde tras 2 intentos de reformular</li>
+          <li>Rechaza cita <b>y</b> callback</li>
+          <li>Pide no ser contactado ("no me molesten")</li>
+        </ul>
+      </div>
+      <div>
+        <span class="badge red">Ejemplo</span>
+        <div class="chat">
+          <div class="who">Lucía</div><div class="msg user">No me interesa, no me escriban más</div>
+          <div class="who">AutoBot</div><div class="msg bot">Entendido, Lucía. ¡Que tengas buen día!</div>
+        </div>
+        <p style="margin-top:8px">El agente llama (sin argumentos):</p>
+<pre><span class="k">marcar_desistido</span>()</pre>
+        <p class="muted" style="margin-top:8px">→ un solo <code>edit</code> con STATUS_ID = "Desistido". No crea task. Idempotente: una sola vez por conversación.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 8 RESUMEN -->
+  <section class="slide">
+    <h2>Resumen comparativo</h2>
+    <div class="scroll-tbl">
+    <table>
+      <tr><th>Tool</th><th>Endpoint / action</th><th>Parámetros</th><th>Crea task</th><th>event</th></tr>
+      <tr>
+        <td><b>buscar_vehiculo</b></td><td>RAG /buscar</td>
+        <td><code>query</code></td><td>—</td><td>—</td>
+      </tr>
+      <tr>
+        <td><b>agendar_cita</b></td><td>Bitrix edit + task</td>
+        <td>11 campos (incluye <code>appointment_datetime</code>)</td><td>Sí (confirmar cita)</td><td>cita_agendada</td>
+      </tr>
+      <tr>
+        <td><b>agendar_llamada</b></td><td>Bitrix edit + task</td>
+        <td>10 campos (sin appointment)</td><td>Sí (callback)</td><td>callback_solicitado</td>
+      </tr>
+      <tr>
+        <td><b>marcar_desistido</b></td><td>Bitrix edit</td>
+        <td>ninguno (todo hardcoded)</td><td>No</td><td>desistido</td>
+      </tr>
+    </table>
+    </div>
+    <div class="grid g2" style="margin-top:18px">
+      <div class="card"><h3>Lectura vs escritura</h3><p><code>buscar_vehiculo</code> es lectura: reintenta y tiene circuit breaker. Las otras 3 escriben: <b>sin retry</b>, idempotencia delegada al prompt.</p></div>
+      <div class="card"><h3>id_bitrix nunca es parámetro</h3><p>Las 3 tools de cierre toman el lead del <b>contexto de la sesión</b>, no del LLM. Todo campo vacío o no entendido cae a <span class="na">"N.A"</span>.</p></div>
+    </div>
+  </section>
+
+</div>
+
+<div class="counter" id="counter">1 / 11</div>
+<div class="nav">
+  <button class="btn" onclick="go(-1)">← Anterior</button>
+  <div class="dots" id="dots"></div>
+  <button class="btn" onclick="go(1)">Siguiente →</button>
+</div>
+
+<script>
+  const slides=[...document.querySelectorAll('.slide')];
+  const dots=document.getElementById('dots');
+  const counter=document.getElementById('counter');
+  let i=0;
+  slides.forEach((_,k)=>{const d=document.createElement('div');d.className='dot';d.onclick=()=>set(k);dots.appendChild(d);});
+  function set(n){
+    i=Math.max(0,Math.min(slides.length-1,n));
+    slides.forEach((s,k)=>s.classList.toggle('active',k===i));
+    [...dots.children].forEach((d,k)=>d.classList.toggle('on',k===i));
+    counter.textContent=`${i+1} / ${slides.length}`;
+  }
+  function go(d){set(i+d)}
+  // Tarjetas de tool: accesibles por teclado (Enter / Espacio)
+  document.querySelectorAll('.tc[onclick]').forEach(card=>{
+    card.addEventListener('keydown',e=>{
+      if(e.key==='Enter'||e.key===' '){e.preventDefault();e.stopPropagation();card.click();}
+    });
+  });
+  document.addEventListener('keydown',e=>{
+    if(e.key==='ArrowRight'||e.key===' ')go(1);
+    if(e.key==='ArrowLeft')go(-1);
+  });
+  set(0);
+</script>
+</body>
+</html>
