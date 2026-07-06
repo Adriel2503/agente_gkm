@@ -104,10 +104,18 @@ def get_model():
     """
     global _model
     if _model is None:
-        logger.info("[LLM] Inicializando modelo LLM: %s", app_config.OPENAI_MODEL)
+        # base_url vacío → None → SDK usa api.openai.com (OpenAI directo).
+        # base_url seteado → endpoint OpenAI-compatible (ej. Azure OpenAI v1).
+        base_url = app_config.OPENAI_BASE_URL or None
+        logger.info(
+            "[LLM] Inicializando modelo LLM: %s (base_url=%s)",
+            app_config.OPENAI_MODEL,
+            base_url or "api.openai.com (default)",
+        )
         _model = init_chat_model(
             f"openai:{app_config.OPENAI_MODEL}",
             api_key=app_config.OPENAI_API_KEY,
+            base_url=base_url,
             temperature=app_config.OPENAI_TEMPERATURE,
             max_tokens=app_config.MAX_TOKENS,
             timeout=app_config.OPENAI_TIMEOUT,

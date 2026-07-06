@@ -87,6 +87,11 @@ def _get_log_level(key: str, default: str) -> str:
 OPENAI_API_KEY: str = _get_str("OPENAI_API_KEY", "")
 OPENAI_MODEL: str = _get_str("OPENAI_MODEL", "gpt-4o-mini")
 OPENAI_TEMPERATURE: float = _get_float("OPENAI_TEMPERATURE", 0.5, min_val=0.0, max_val=2.0)
+# Base URL opcional para el endpoint OpenAI-compatible. Vacío = api.openai.com.
+# Para Azure OpenAI (endpoint unificado v1): usar
+#   https://<resource>.services.ai.azure.com/openai/v1
+# y setear OPENAI_MODEL al NOMBRE DEL DEPLOYMENT + OPENAI_API_KEY a la key Azure.
+OPENAI_BASE_URL: str = _get_str("OPENAI_BASE_URL", "")
 
 # ---------------------------------------------------------------------------
 # Configuración del servidor
