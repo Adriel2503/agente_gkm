@@ -8,7 +8,7 @@ el CallbackHandler, evitando inicializar Langfuse con credenciales vacías.
 from __future__ import annotations
 
 import os
-from typing import Any
+from typing import Any, Literal
 
 from ... import config as app_config
 from ...logger import get_logger
@@ -16,10 +16,18 @@ from ...logger import get_logger
 logger = get_logger(__name__)
 
 
-def get_langfuse_callback_handler() -> Any | None:
+LangfuseState = Literal[
+    "disabled",
+    "missing_env",
+    "import_missing",
+    "attached",
+]
+
+
+def get_langfuse_callback_handler() -> tuple[Any | None, LangfuseState]:
     """Retorna un CallbackHandler de Langfuse si la integración está habilitada."""
     if not app_config.LANGFUSE_ENABLED:
-        return None
+        return None, "disabled"
 
     missing = [
         name
@@ -35,7 +43,7 @@ def get_langfuse_callback_handler() -> Any | None:
             "[LANGFUSE] Integración habilitada pero faltan variables: %s",
             ", ".join(missing),
         )
-        return None
+        return None, "missing_env"
 
     os.environ.setdefault("LANGFUSE_HOST", app_config.LANGFUSE_BASE_URL)
 
@@ -43,9 +51,9 @@ def get_langfuse_callback_handler() -> Any | None:
         from langfuse.langchain import CallbackHandler
     except ImportError:
         logger.warning("[LANGFUSE] SDK no instalado; traces deshabilitados")
-        return None
+        return None, "import_missing"
 
-    return CallbackHandler(public_key=app_config.LANGFUSE_PUBLIC_KEY)
+    return CallbackHandler(public_key=app_config.LANGFUSE_PUBLIC_KEY), "attached"
 
 
 def build_langfuse_config(
@@ -59,13 +67,21 @@ def build_langfuse_config(
     version: str | None,
     sucursal: str | None,
     correo: str | None,
-) -> dict[str, Any]:
+) -> tuple[dict[str, Any], LangfuseState, Any | None]:
     """Construye config LangChain con callbacks y metadata de Langfuse."""
-    handler = get_langfuse_callback_handler()
+    handler, state = get_langfuse_callback_handler()
     if handler is None:
-        return {}
+        return {}, state, None
 
     session_id = f"{id_empresa}_{phone}_{id_bitrix}"
+    logger.info(
+        "[LANGFUSE] attached session_id=%s user_id=%s empresa=%s model=%s fields=%s",
+        session_id,
+        phone,
+        id_empresa,
+        app_config.OPENAI_MODEL,
+        "phone,id_bitrix,nombre,correo,marca,modelo,version,sucursal",
+    )
     return {
         "callbacks": [handler],
         "metadata": {
@@ -87,7 +103,7 @@ def build_langfuse_config(
             f"empresa:{id_empresa}",
             f"model:{app_config.OPENAI_MODEL}",
         ],
-    }
+    }, state, handler
 
 
-__all__ = ["build_langfuse_config", "get_langfuse_callback_handler"]
+__all__ = ["build_langfuse_config", "get_langfuse_callback_handler", "LangfuseState"]

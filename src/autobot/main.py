@@ -221,6 +221,11 @@ def main():
     logger.info("Checkpointer: %s", "Redis (%s)" % app_config.REDIS_URL if app_config.REDIS_URL else "InMemorySaver")
     logger.info("Timezone:   %s", app_config.TIMEZONE)
     logger.info("Log Level:  %s", app_config.LOG_LEVEL)
+    logger.info(
+        "Langfuse:   enabled=%s host=%s",
+        app_config.LANGFUSE_ENABLED,
+        app_config.LANGFUSE_BASE_URL or "(no configurado)",
+    )
     logger.info("-" * 60)
     logger.info("POST /api/chat  → Callback: %s", app_config.CALLBACK_URL or "(no configurada)")
     logger.info("GET  /health    GET  /metrics")

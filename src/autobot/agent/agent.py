@@ -244,7 +244,7 @@ async def process_message(
                 "thread_id": f"{id_empresa}_{phone}_{id_bitrix}"
             }
         }
-        langfuse_config = build_langfuse_config(
+        langfuse_config, langfuse_state, langfuse_handler = build_langfuse_config(
             id_empresa=id_empresa,
             phone=phone,
             id_bitrix=id_bitrix,
@@ -257,6 +257,11 @@ async def process_message(
         )
         if langfuse_config:
             run_config.update(langfuse_config)
+        logger.info(
+            "[LANGFUSE] request=%s state=%s",
+            f"{id_empresa}_{phone}_{id_bitrix}",
+            langfuse_state,
+        )
         try:
             logger.debug("[AGENT] Invocando agent - Session: %s, Message: %s...", phone, message[:100])
 
@@ -271,6 +276,20 @@ async def process_message(
                         },
                         config=run_config,
                         context=agent_context
+                    )
+            if langfuse_handler is not None and langfuse_state == "attached":
+                try:
+                    langfuse_handler._langfuse_client.flush()
+                    logger.info(
+                        "[LANGFUSE] message=%s state=flushed trace_id=%s",
+                        f"{id_empresa}_{phone}_{id_bitrix}",
+                        getattr(langfuse_handler, "last_trace_id", None),
+                    )
+                except Exception as e:
+                    logger.warning(
+                        "[LANGFUSE] message=%s state=flush_failed err=%s",
+                        f"{id_empresa}_{phone}_{id_bitrix}",
+                        e,
                     )
             _llm_duration = time.perf_counter() - _llm_start
             logger.info("[AGENT] LLM call completado - Session: %s, duración=%.2fs", phone, _llm_duration)
