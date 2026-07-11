@@ -7,7 +7,6 @@ el CallbackHandler, evitando inicializar Langfuse con credenciales vacías.
 
 from __future__ import annotations
 
-import os
 from typing import Any, Literal
 
 from ... import config as app_config
@@ -15,13 +14,35 @@ from ...logger import get_logger
 
 logger = get_logger(__name__)
 
+_LANGFUSE_CLIENT: Any | None = None
+
 
 LangfuseState = Literal[
     "disabled",
     "missing_env",
     "import_missing",
+    "client_initialized",
     "attached",
 ]
+
+
+def _init_langfuse_client() -> Any:
+    global _LANGFUSE_CLIENT
+    if _LANGFUSE_CLIENT is not None:
+        return _LANGFUSE_CLIENT
+
+    from langfuse import Langfuse
+
+    _LANGFUSE_CLIENT = Langfuse(
+        public_key=app_config.LANGFUSE_PUBLIC_KEY,
+        secret_key=app_config.LANGFUSE_SECRET_KEY,
+        base_url=app_config.LANGFUSE_BASE_URL,
+    )
+    logger.info(
+        "[LANGFUSE] client_initialized host=%s",
+        app_config.LANGFUSE_BASE_URL,
+    )
+    return _LANGFUSE_CLIENT
 
 
 def get_langfuse_callback_handler() -> tuple[Any | None, LangfuseState]:
@@ -45,15 +66,14 @@ def get_langfuse_callback_handler() -> tuple[Any | None, LangfuseState]:
         )
         return None, "missing_env"
 
-    os.environ.setdefault("LANGFUSE_HOST", app_config.LANGFUSE_BASE_URL)
-
     try:
         from langfuse.langchain import CallbackHandler
     except ImportError:
         logger.warning("[LANGFUSE] SDK no instalado; traces deshabilitados")
         return None, "import_missing"
 
-    return CallbackHandler(public_key=app_config.LANGFUSE_PUBLIC_KEY), "attached"
+    _init_langfuse_client()
+    return CallbackHandler(), "attached"
 
 
 def build_langfuse_config(
