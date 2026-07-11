@@ -11,7 +11,6 @@ dependencies = [
     "fastapi==0.135.1",              # Framework HTTP ASGI (POST /api/chat, GET /health)
     "uvicorn[standard]==0.41.0",     # Servidor ASGI (producción)
     "pydantic==2.12.5",              # Validación de request/response y datos de booking
-
     # --- Agente LLM ---
     "openai==2.26.0",                # Error types (AuthenticationError, RateLimitError, etc.)
     "langchain==1.2.10",             # create_agent, @tool, ToolRuntime, wrap_model_call
@@ -20,18 +19,16 @@ dependencies = [
     "langgraph==1.0.10",             # Grafo del agente, flujo de mensajes
     "langgraph-checkpoint==4.0.1",   # InMemorySaver (checkpointer conversacional)
     "langgraph-checkpoint-redis==0.4.0",  # AsyncRedisSaver (Redis checkpointer)
-
     # --- HTTP y resiliencia ---
     "httpx==0.28.1",                 # Cliente async para APIs externas (MaravIA PHP)
     "tenacity==9.1.4",               # Retry con backoff exponencial en post_with_logging
-
     # --- Configuración y templates ---
     "python-dotenv==1.2.2",          # Carga de .env en config.py
     "jinja2==3.1.6",                 # System prompt dinámico (gqm_system.j2)
-
     # --- Observabilidad y caché ---
     "prometheus-client==0.24.1",     # Métricas en /metrics (Prometheus/Grafana)
     "cachetools==7.0.3",             # TTLCache para agentes, horarios, búsquedas, contexto
+    "langfuse==4.14.0",
 ]
 
 [tool.hatch.build.targets.wheel]

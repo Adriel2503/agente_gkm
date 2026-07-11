@@ -123,6 +123,20 @@ LOG_LEVEL: str = _get_log_level("LOG_LEVEL", "INFO")
 LOG_FILE: str = _get_str("LOG_FILE", "")  # Si está vacío, no guarda en archivo
 
 # ---------------------------------------------------------------------------
+# Langfuse tracing (opcional)
+# ---------------------------------------------------------------------------
+
+LANGFUSE_ENABLED: bool = _get_str("LANGFUSE_ENABLED", "false").lower() in (
+    "1",
+    "true",
+    "yes",
+    "on",
+)
+LANGFUSE_PUBLIC_KEY: str = _get_str("LANGFUSE_PUBLIC_KEY", "")
+LANGFUSE_SECRET_KEY: str = _get_str("LANGFUSE_SECRET_KEY", "")
+LANGFUSE_BASE_URL: str = _get_str("LANGFUSE_BASE_URL", "")
+
+# ---------------------------------------------------------------------------
 # Timeouts y límites
 # ---------------------------------------------------------------------------
 

@@ -17,6 +17,7 @@ from .runtime import (
     get_prompt_version, get_prompt_text, VERSION_FILE_FALLBACK,
     message_window,
 )
+from .runtime._langfuse import build_langfuse_config
 from ..tools.tools import AGENT_TOOLS
 from ..logger import get_logger
 from ..metrics import track_chat_response, track_llm_call, record_chat_error, record_token_usage, CHAT_REQUESTS, AGENT_CACHE, update_cache_stats
@@ -243,6 +244,19 @@ async def process_message(
                 "thread_id": f"{id_empresa}_{phone}_{id_bitrix}"
             }
         }
+        langfuse_config = build_langfuse_config(
+            id_empresa=id_empresa,
+            phone=phone,
+            id_bitrix=id_bitrix,
+            nombre=nombre,
+            marca=marca,
+            modelo=modelo,
+            version=version,
+            sucursal=sucursal,
+            correo=correo,
+        )
+        if langfuse_config:
+            run_config.update(langfuse_config)
         try:
             logger.debug("[AGENT] Invocando agent - Session: %s, Message: %s...", phone, message[:100])
 
